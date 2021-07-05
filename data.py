@@ -89,5 +89,30 @@ def greedy_allocation(capacities, demands, costs):
     print(hub_flow)
 
 
-
 greedy_allocation([0,0,100000000,0,50000,100000, 0, 0, 0, 20000], W[:10,:10], C[:10,:10])
+
+
+
+def shortest_paths_allocation(capacities, demands, distance, coefficients):
+
+    X = coefficients[0]
+    alpha = coefficients[1]
+    delta = coefficients[2]
+
+    hubs = []
+    non_hubs = []
+    for i in range(len(capacities)):
+        if capacities[i] > 0:
+            hubs.append(i)
+        else:
+            non_hubs.append(i)
+
+    hub_node_cost = np.zeros([len(hubs), len(non_hubs)])
+    for k in hubs:
+        for j in non_hubs:
+            hub_node_cost[k,j] = min(alpha*distance[k,l] + delta*distance[l,j] for l in hubs)
+
+    node_node_cost = np.zeros([len(non_hubs), len(non_hubs)])
+    for i in non_hubs:
+        for j in non_hubs:
+            node_node_cost[i,j] = min(X*distance[i,k] + hub_node_cost[k,j] for k in hubs)
