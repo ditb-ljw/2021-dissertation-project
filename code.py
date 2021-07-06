@@ -21,79 +21,9 @@ for i in data:
 print(W[:10,:10])
 print(C[:10,:10])
 
-def greedy_allocation(capacities, demands, costs):
-
-    hubs = []
-    non_hubs = []
-    for i in range(len(capacities)):
-        if capacities[i] > 0:
-            hubs.append(i)
-        else:
-            non_hubs.append(i)
 
 
-    # send to hubs
-    allocation = {}
-    nodes_to_hubs = {}
-    hub_flow = {}
-    for i in hubs:
-        nodes_to_hubs[i] = []
-        hub_flow[i] = -capacities[i]
-
-    # initial allocation
-    for i in non_hubs:
-        cost_i_hub = costs[i, hubs]
-        i_hub = np.argmin(cost_i_hub)
-        allocation[i] = {hubs[i_hub]: sum(demands[i,:])}
-        nodes_to_hubs[hubs[i_hub]].append(i)
-
-    # adjust to satisfy capacities
-    hubs_available = hubs.copy()
-    for i in hubs:
-        if nodes_to_hubs[i]:
-            for j in nodes_to_hubs[i]:
-                hub_flow[i] += allocation[j][i]
-
-    for i in hubs:
-        hub_unavailable = 1
-        while hub_flow[i] > 0:
-            if hub_unavailable == 1:
-                hubs_available.remove(i)
-                hub_unavailable = 0
-            if len(hubs_available) == 0:
-                print('Infeasible!')
-                return 0
-            else:
-                cost_i_hub_left = costs[nodes_to_hubs[i], :][:, hubs_available] - costs[nodes_to_hubs[i], i][np.newaxis].T
-            reallocate = np.argwhere(cost_i_hub_left == np.min(cost_i_hub_left))
-            reallocate_node = nodes_to_hubs[i][reallocate[0][0]]
-            reallocate_hub = hubs_available[reallocate[0][1]]
-#            bisect.insort(nodes_to_hubs[reallocate_hub], reallocate_node)
-            nodes_to_hubs[reallocate_hub].append(reallocate_node)
-
-            reallocate_flow = min(hub_flow[i], allocation[reallocate_node][i])
-            hub_flow[reallocate_hub] += reallocate_flow
-            hub_flow[i] -= reallocate_flow
-            allocation[reallocate_node][i] -= reallocate_flow
-            allocation[reallocate_node][reallocate_hub] = reallocate_flow
-
-            if allocation[reallocate_node][i] == 0:
-                nodes_to_hubs[i].remove(reallocate_node)
-
-
-
-    # receive from hubs
-
-    print(allocation)
-    print(nodes_to_hubs)
-    print(hub_flow)
-
-
-greedy_allocation([0,0,100000000,0,50000,100000, 0, 0, 0, 20000], W[:10,:10], C[:10,:10])
-
-
-
-def shortest_paths_allocation(capacities, demands, distance, coefficients):
+def shortest_paths_allocation(node_list, distance, coefficients):
 
     X = coefficients[0]
     alpha = coefficients[1]
@@ -101,18 +31,30 @@ def shortest_paths_allocation(capacities, demands, distance, coefficients):
 
     hubs = []
     non_hubs = []
-    for i in range(len(capacities)):
-        if capacities[i] > 0:
+    for i in range(len(node_list)):
+        if node_list[i] > 0:
             hubs.append(i)
         else:
             non_hubs.append(i)
 
     hub_node_cost = np.zeros([len(hubs), len(non_hubs)])
-    for k in hubs:
-        for j in non_hubs:
-            hub_node_cost[k,j] = min(alpha*distance[k,l] + delta*distance[l,j] for l in hubs)
+    hub_node = np.zeros([len(hubs), len(non_hubs)])
+    for k_i, k in enumerate(hubs):
+        for j_i, j in enumerate(non_hubs):
+                cost_node = min((alpha*distance[k,l] + delta*distance[l,j], l) for l in hubs)
+                hub_node_cost[k_i,j_i] = cost_node[0]
+                hub_node[k_i,j_i] = cost_node[1]
 
     node_node_cost = np.zeros([len(non_hubs), len(non_hubs)])
-    for i in non_hubs:
-        for j in non_hubs:
-            node_node_cost[i,j] = min(X*distance[i,k] + hub_node_cost[k,j] for k in hubs)
+    node_node = np.zeros([len(non_hubs), len(non_hubs)])
+    for i_i, i in enumerate(non_hubs):
+        for j_i, j in enumerate(non_hubs):
+            cost_node = min((X*distance[i,k] + hub_node_cost[k_i,j_i], k) for k_i, k in enumerate(hubs))
+            node_node_cost[i_i,j_i] = cost_node[0]
+            node_node[i_i,j_i] = cost_node[1]
+
+
+    return node_node_cost, node_node, hub_node_cost, hub_node
+
+
+shortest_paths_allocation([0,0,1,0,1,1, 0, 0, 0, 1], C[:10,:10], [1,1,1])
