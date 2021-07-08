@@ -1,4 +1,5 @@
 import numpy as np
+import random
 # import bisect
 
 # read all the contents in the text file
@@ -51,44 +52,78 @@ def shortest_paths_allocation(hubs, non_hubs, distance, coefficients):
     second_hub = np.zeros([node_number, node_number])
     for i in range(node_number):
         for j in range(node_number):
-            cost_node = min((X*distance[i,k] + hub_node_cost[k_i,j], k) for k_i, k in enumerate(hubs))
+            if i in hubs:
+                cost_node = (X*distance[i,i] + hub_node_cost[i,j], i)
+            else:
+                cost_node = min((X*distance[i,k] + hub_node_cost[k_i,j], k) for k_i, k in enumerate(hubs))
             node_node_cost[i,j] = cost_node[0]
             first_hub[i,j] = cost_node[1]
             second_hub[i,j] = hub_node[hubs.index(cost_node[1]), j]
 
-    return hub_node_cost, node_node_cost, first_hub, second_hub
+    return hub_node_cost, node_node_cost, hub_node, first_hub, second_hub
 
 
 
-def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity):
+def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients):
+
+    X = coefficients[0]
+    alpha = coefficients[1]
+    delta = coefficients[2]
 
     node_number = len(hubs) + len(non_hubs)
     hub_flow = np.zeros(node_number)
-    flow = {}
+    flow = {i:[] for i in hubs}
 
     for i in in range(node_number):
         for j in range(node_number):
             hub_flow[first_hub[i,j]] += demand[i,j]
-            flow[]
+            route = (i,first_hub[i,j],second_hub[i,j],j)
+#            route_str = ''.join(str(x) for x in route)
+#            flow[route_str] = [route, demand[i,j]]
+            flow[first_hub[i,j]].append([route, demand[i,j]])
 
-a={}
-a[1234]=1
-a
+    available_hubs = hubs.copy()
+    full_hubs = []
+    exceed = np.zeros(node_number)
+    for k in hubs:
+        exceed[k] = hub_flow[k] - max_hub_capacity[k]
+        if exceed[k] >= 0:
+            full_hubs.append(k)
+            available_hubs.remove(k)
+
+    for k in full_hubs:
+        while exceed[k] > 0:
+            reroute_flow_i = random.choice(range(len(flow[k])))
+            reroute_flow = flow[k][reroute_flow_i]
+            origin = reroute_flow[0][0]
+            if origin == k:
+                continue
+            destination = reroute_flow[0][3]
+            reroute_cost_hub = min((X*distance[origin,k] + hub_node_cost[hubs.index(k),destination], k) for k in available_hubs)
+            new_route = (origin,reroute_cost_hub[1],hub_node[hubs.index(reroute_cost_hub[1]), destination],destination)
+            reroute_flow_value = min(reroute_flow[1], exceed[k])
+            if reroute_flow_value == reroute_flow[1]:
+                flow[k].pop(reroute_flow_i)
+            else:
+                reroute_flow[1] -= reroute_flow_value
+            flow[reroute_cost_hub[1]].append([new_route, reroute_flow_value])
+#            hub_flow[k] -= reroute_flow_value
+#            hub_flow[reroute_cost_hub[1]] += reroute_flow_value
+            exceed[k] -= reroute_flow_value
+            exceed[reroute_cost_hub[1]] += reroute_flow_value
+            if exceed[reroute_cost_hub[1]] >= 0:
+                full_hubs.append(reroute_cost_hub[1])
+                available_hubs.remove(reroute_cost_hub[1])
+
+    return flow
 
 
-    return hub_flow
+def flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients):
 
+    X = coefficients[0]
 
-def additional_capacity_reroute(old_hubs, new_hubs, non_hubs, hub_capacity, max_hub_capacity, hub_capacity_now, hub_node_cost, node_node_cost, first_hub, second_hub):
-
-    node_number = len(old_hubs) + len(new_hubs) + len(non_hubs)
-    new_capacity = np.zeros(node_number)
-
-    for i in old_hubs:
-        if hub_capacity[i] > hub_capacity_now[i]:
-            new_capacity[i] = hub_capacity[i]
-        else:
-            new_capacity[i] = hub_capacity_now[i]
+    for k in hubs:
+        for flows in flow[k]:
 
 
 
