@@ -59,16 +59,24 @@ def shortest_paths_allocation(hubs, non_hubs, distance, coefficients):
     return hub_node_cost, node_node_cost, first_hub, second_hub
 
 
-def allocate_capacity(hubs, non_hubs, demand, first_hub):
+
+def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity):
 
     node_number = len(hubs) + len(non_hubs)
-    hub_capacity = np.zeros(node_number)
+    hub_flow = np.zeros(node_number)
+    flow = {}
 
     for i in in range(node_number):
         for j in range(node_number):
-            hub_capacity[first_hub[i,j]] += demand[i,j]
+            hub_flow[first_hub[i,j]] += demand[i,j]
+            flow[]
 
-    return hub_capacity
+a={}
+a[1234]=1
+a
+
+
+    return hub_flow
 
 
 def additional_capacity_reroute(old_hubs, new_hubs, non_hubs, hub_capacity, max_hub_capacity, hub_capacity_now, hub_node_cost, node_node_cost, first_hub, second_hub):
@@ -82,7 +90,7 @@ def additional_capacity_reroute(old_hubs, new_hubs, non_hubs, hub_capacity, max_
         else:
             new_capacity[i] = hub_capacity_now[i]
 
-    
+
 
 
 
