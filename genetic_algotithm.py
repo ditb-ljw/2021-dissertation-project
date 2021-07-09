@@ -133,4 +133,36 @@ def flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients):
     return total_cost_flow
 
 
-def additional_capacity(max_hub_capacity, exceed):
+def additional_capacity(capacity_now, max_hub_capacity, exceed):
+
+#    max_capacity_now = max_hub_capacity.copy()
+#    for i in new_hubs:
+#        max_capacity_now[i] = capacity_now[i]
+
+    add_capacity = []
+    for i in range(len(exceed)):
+        capacity = max_hub_capacity[i] + exceed[i]
+        additional = capacity - capacity_now[i]
+        if additional > 0:
+            add_capacity.append(additional)
+        else:
+            add_capacity.append(0)
+
+    return add_capacity
+
+
+def hub_capacity_cost(new_hubs, initial_capacity, add_capacity, install_hub_cost, initial_capacity_cost, additional_capacity_cost):
+
+    install_cost = 0
+    initial_cost = 0
+    for i in range(len(new_hubs)):
+        install_cost += install_hub_cost[new_hubs[i]]
+        initial_cost += initial_capacity_cost[new_hubs[i], initial_capacity[i]]
+
+    additional_cost = 0
+    for j in range(len(add_capacity)):
+        additional_cost += additional_capacity_cost[j, add_capacity[j]]
+
+    total_hub_cost = install_cost + initial_cost + additional_cost
+
+    return total_hub_cost
