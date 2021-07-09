@@ -115,18 +115,22 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
                 full_hubs.append(reroute_cost_hub[1])
                 available_hubs.remove(reroute_cost_hub[1])
 
-    return flow
+    return flow, exceed
 
 
 def flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients):
 
     X = coefficients[0]
 
+    total_cost_flow = 0
     for k in hubs:
         for flows in flow[k]:
+            origin = flow[0][0]
+            hub_1 = flow[0][1]
+            destination = flow[0][3]
+            total_cost_flow += flows[1]*(X*distance[origin,hub_1] + hub_node_cost[hub_1,destination])
+
+    return total_cost_flow
 
 
-
-
-
-    return
+def additional_capacity(max_hub_capacity, exceed):
