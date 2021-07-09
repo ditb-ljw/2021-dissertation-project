@@ -23,14 +23,6 @@ print(W[:10,:10])
 print(C[:10,:10])
 
 
-hubs = []
-non_hubs = []
-for i in range(len(node_list)):
-    if node_list[i] > 0:
-        hubs.append(i)
-    else:
-        non_hubs.append(i)
-
 def shortest_paths_allocation(hubs, non_hubs, distance, coefficients):
 
     X = coefficients[0]
@@ -143,7 +135,7 @@ def additional_capacity(capacity_now, max_hub_capacity, exceed):
     for i in range(len(exceed)):
         capacity = max_hub_capacity[i] + exceed[i]
         additional = capacity - capacity_now[i]
-        if additional > 0:
+        if additional > 0 and capacity_now[i] > 0:
             add_capacity.append(additional)
         else:
             add_capacity.append(0)
@@ -166,3 +158,49 @@ def hub_capacity_cost(new_hubs, initial_capacity, add_capacity, install_hub_cost
     total_hub_cost = install_cost + initial_cost + additional_cost
 
     return total_hub_cost
+
+
+def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict):
+
+    total_cost = 0
+
+    for s in scenarios:
+        demand = demand_dict[s][t]
+        old_hubs = []
+        cost_periods = 0
+
+        for t in range(initial_capacity_matrix.shape[0]):
+            initial_capacity = initial_capacity_matrix[t,:]
+            new_hubs = [k for k in range(len(initial_capacity)) if initial_capacity[k] > 0]
+            hubs = old_hubs + new_hubs
+            hubs.sort()
+            non_hubs = [i for i in range(initial_capacity_matrix.shape[1]) if i not in hubs]
+            max_hub_capacity = max_capacity.copy()
+            for k in range(len(new_hubs)):
+                max_hub_capacity[new_hubs[k]] = initial_capacity[new_hubs[k]]
+
+            hub_node_cost, node_node_cost, hub_node, first_hub, second_hub = shortest_paths_allocation(hubs, non_hubs, distance, coefficients)
+            flow, exceed = reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients)
+            cost_flow = flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients)
+
+            if t == 0:
+                capacity_now = initial_capacity
+            add_capacity = additional_capacity(capacity_now, max_hub_capacity, exceed)
+
+            install_hub_cost = install_hub_cost_matrix[t,:]
+            initial_capacity_cost = initial_capacity_cost_dict[t]
+            additional_capacity_cost = additional_capacity_cost_dict[t]
+            total_hub_cost = hub_capacity_cost(new_hubs, initial_capacity, add_capacity, install_hub_cost, initial_capacity_cost, additional_capacity_cost)
+
+            old_hubs.append(new_hubs)
+            for i in range(len(capacity_now)):
+                capacity_now[i] += add_capacity[i]
+
+            cost_periods += total_hub_cost + cost_flow
+
+        cost_scenario = probabilities[s]*cost_periods
+        total_cost += cost_scenario
+
+    fitness_value = 1/total_cost
+
+    return round(fitness_value, 3)
