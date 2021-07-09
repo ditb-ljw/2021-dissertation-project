@@ -74,7 +74,7 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
     hub_flow = np.zeros(node_number)
     flow = {i:[] for i in hubs}
 
-    for i in in range(node_number):
+    for i in range(node_number):
         for j in range(node_number):
             hub_flow[first_hub[i,j]] += demand[i,j]
             route = (i,first_hub[i,j],second_hub[i,j],j)
