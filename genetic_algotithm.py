@@ -153,16 +153,17 @@ def hub_capacity_cost(new_hubs, initial_capacity, add_capacity, install_hub_cost
 
     additional_cost = 0
     for j in range(len(add_capacity)):
-        additional_cost += additional_capacity_cost[j, add_capacity[j]]
+        additional_cost += additional_capacity_cost[j, int(add_capacity[j])]
 
     total_hub_cost = install_cost + initial_cost + additional_cost
 
     return total_hub_cost
 
 
-def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict):
+def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict):
 
     total_cost = 0
+    max_capacity = np.array(max_capacity)*module_capacity
 
     for s in scenarios:
         demand = demand_dict[s][t]
@@ -170,7 +171,7 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
         cost_periods = 0
 
         for t in range(initial_capacity_matrix.shape[0]):
-            initial_capacity = initial_capacity_matrix[t,:]
+            initial_capacity = initial_capacity_matrix[t,:]*module_capacity
             new_hubs = [k for k in range(len(initial_capacity)) if initial_capacity[k] > 0]
             hubs = old_hubs + new_hubs
             hubs.sort()
@@ -185,7 +186,9 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
 
             if t == 0:
                 capacity_now = initial_capacity
-            add_capacity = additional_capacity(capacity_now, max_hub_capacity, exceed)
+            else:
+                capacity_now = np.array(capacity_now)*module_capacity
+            add_capacity = np.ceil(np.array(additional_capacity(capacity_now, max_hub_capacity, exceed))/module_capacity)
 
             install_hub_cost = install_hub_cost_matrix[t,:]
             initial_capacity_cost = initial_capacity_cost_dict[t]
@@ -194,7 +197,7 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
 
             old_hubs.append(new_hubs)
             for i in range(len(capacity_now)):
-                capacity_now[i] += add_capacity[i]
+                capacity_now[i] = int(np.ceil(capacity_now[i]/module_capacity)) + add_capacity[i]
 
             cost_periods += total_hub_cost + cost_flow
 
