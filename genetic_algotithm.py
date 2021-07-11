@@ -113,11 +113,6 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
                 route = (i,int(first_hub[i,j]),int(second_hub[i,j]),j)
                 flow[int(first_hub[i,j])].append([route, demand[i,j]])
 
-    print('shortest')
-    print(flow)
-    print('hub flow')
-    print(hub_flow)
-
     # Calculate the amount of flow that exceed the maximal capacity for each hub
     # Get the list of hubs that have not yet reached their capacity and the list of hubs that have reached their capacity
     available_hubs = hubs.copy()
@@ -129,15 +124,13 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
             full_hubs.append(k)
             available_hubs.remove(k)
 
-    print('max hub capacity')
-    print(max_hub_capacity)
-    print('exceed before')
-    print(exceed)
-
     # For each hubs that have reached their capacity, arbitrarily reroute an excess flow(except the flow originated at the hub)
     # via its cheapest alternative hub that have not yet reached the maximal capacity, until the exceed amount of flow is 0
     for k in full_hubs:
         while exceed[k] > 0:
+            # Infeasible
+            if available_hubs == []:
+                return 0
             reroute_flow_i = random.choice(range(len(flow[k])))
             reroute_flow = flow[k][reroute_flow_i]
             origin = reroute_flow[0][0]
@@ -158,10 +151,6 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
                 full_hubs.append(reroute_cost_hub[1])
                 available_hubs.remove(reroute_cost_hub[1])
 
-    print('reroute')
-    print(flow)
-    print('exceed')
-    print(exceed)
     return flow, exceed
 
 
@@ -192,8 +181,6 @@ def flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients):
             destination = flows[0][3]
             total_cost_flow += flows[1]*(X*distance[origin,hub_1] + hub_node_cost[hubs.index(hub_1),destination])
 
-    print('total cost flow')
-    print(total_cost_flow)
     return total_cost_flow
 
 
@@ -222,10 +209,6 @@ def additional_capacity(capacity_now, max_hub_capacity, exceed):
         else:
             add_capacity.append(0)
 
-    print('capacity now')
-    print(capacity_now)
-    print('add')
-    print(add_capacity)
     return add_capacity
 
 
@@ -258,12 +241,6 @@ def hub_capacity_cost(new_hubs, initial_capacity, add_capacity, install_hub_cost
 
     total_hub_cost = install_cost + initial_cost + additional_cost
 
-    print('additional cost')
-    print(additional_cost)
-
-    print('total hub cost')
-    print(total_hub_cost)
-
     return total_hub_cost
 
 
@@ -290,8 +267,13 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
 
     total_cost = 0
     max_capacity = np.array(max_capacity)*module_capacity
+    flow_routing = {}
+    capacity_expansion = {}
 
     for s in scenarios:
+        flow_routing[s] = []
+        capacity_expansion[s] = np.zeros([initial_capacity_matrix.shape[0], initial_capacity_matrix.shape[1]])
+
         old_hubs = []
         cost_periods = 0
         capacity_now = np.zeros(initial_capacity_matrix.shape[1])
@@ -300,7 +282,12 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
             demand = demand_dict[s][t]
             initial_capacity = initial_capacity_matrix[t,:]*module_capacity
             new_hubs = [k for k in range(len(initial_capacity)) if initial_capacity[k] > 0]
+
             hubs = old_hubs + new_hubs
+            # Infeasible
+            if hubs == []:
+                return 0
+
             non_hubs = [i for i in range(initial_capacity_matrix.shape[1]) if i not in hubs]
             max_hub_capacity = max_capacity.copy()
             # The capacity limit for each new hub is its initial capacity because hubs cannot be built and expanded in the same time period
@@ -308,12 +295,18 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
                 max_hub_capacity[new_hubs[k]] = initial_capacity[new_hubs[k]]
 
             hub_node_cost, hub_node, first_hub, second_hub = shortest_paths_allocation(hubs, non_hubs, distance, coefficients)
-            flow, exceed = reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients)
+            try:
+                flow, exceed = reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients)
+                flow_routing[s].append(flow)
+            # Infeasible
+            except TypeError:
+                return 0
             cost_flow = flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients)
 
             for j in new_hubs:
                 capacity_now[j] += initial_capacity[j]
             add_capacity = np.ceil(np.array(additional_capacity(capacity_now, max_hub_capacity, exceed))/module_capacity)
+            capacity_expansion[s][t,:] = add_capacity
 
             install_hub_cost = install_hub_cost_matrix[t,:]
             initial_capacity_cost = initial_capacity_cost_dict[t]
@@ -331,12 +324,12 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
 
     fitness_value = 1/total_cost
 
-    return fitness_value
+    return fitness_value, flow_routing, capacity_expansion
 
 
 
 # test
-initial_capacity_matrix = np.array([[0, 5, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 0, 0]])
+initial_capacity_matrix = np.array([[0, 3, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 0, 0]])
 #distance = np.array([[0, 5, 8, 6, 10],[6, 0, 7, 8, 12],[8, 6, 0, 4, 9],[9, 6, 5, 0, 6],[11, 10, 8, 7, 0]])
 distance = C[:5,:5]
 max_capacity = [30, 30, 30, 30, 30]
