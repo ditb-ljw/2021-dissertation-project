@@ -327,6 +327,60 @@ def fitness(initial_capacity_matrix, distance, max_capacity, coefficients, deman
     return fitness_value, flow_routing, capacity_expansion
 
 
+def if_feasible(initial_capacity_matrix, demand_dict, scenarios, max_capacity, module_capacity):
+    '''
+    Check if the chromosome is feasible.
+
+    Input:
+        initial_capacity_matrix (ndarray): Chromosome: initial capacity(module) of each hub in each period
+        demand_dict (dictionary: {scenario: [ndarray, ...]}): Dictionary of demand matrices in each time period for each scenario
+        scenarios (list): Different scenarios
+        max_capacity (list): Maximum number of modules that can be installed in a hub
+        module_capacity (float): Capacity of a module
+
+    Output:
+        boolean: True if feasible, False if infeasible
+    '''
+
+    # There must be at most one positive number in each column
+    for j in range(initial_capacity_matrix.shape[1]):
+        positive_entries = 0
+        for i in range(initial_capacity_matrix.shape[0]):
+            if initial_capacity_matrix[i, j] > 0:
+                positive_entries += 1
+            if positive_entries > 1:
+                return False
+
+    # The total initial capacity in each period(0 if no new hub is built) should be greater than or equal to
+    # the highest total demand in that period – the total maximal capacity of already built hubs
+    max_demand = []
+    total_maximal_capacity = []
+    total_initial_capacity = []
+    total_max_capacity = 0
+    for t in range(initial_capacity_matrix.shape[0]):
+        max_demand_period = max(np.sum(demand_dict[s][t]) for s in scenarios)
+        max_demand.append(max_demand_period)
+
+        total_initial_capacity.append(np.sum(initial_capacity_matrix[t,:]))
+
+        new_hubs = [k for k in range(initial_capacity_matrix.shape[1]) if initial_capacity_matrix[t,k] > 0]
+        total_max_capacity += sum([max_capacity[c] for c in new_hubs])
+        total_maximal_capacity.append(total_max_capacity)
+
+    total_maximal_capacity.pop()
+    total_maximal_capacity = [0] + total_maximal_capacity
+
+    for i in range(len(total_initial_capacity)):
+        if total_initial_capacity[i]*module_capacity < max_demand[i] - total_maximal_capacity[i]*module_capacity:
+            return False
+
+    return True
+
+
+
+
+
+
 
 # test
 initial_capacity_matrix = np.array([[0, 3, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 0, 0]])
@@ -346,4 +400,6 @@ capacity_cost = np.array([np.arange(31), np.arange(31), np.arange(31), np.arange
 initial_capacity_cost_dict = {0: capacity_cost, 1: capacity_cost, 2: capacity_cost}
 additional_capacity_cost_dict = {0: capacity_cost, 1: capacity_cost, 2: capacity_cost}
 
+
+if_feasible(initial_capacity_matrix, demand_dict, scenarios, max_capacity, module_capacity)
 fitness(initial_capacity_matrix, distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict)
