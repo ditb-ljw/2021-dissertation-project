@@ -118,7 +118,7 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
             destination = reroute_flow[0][3]
             reroute_cost_hub = min((X*distance[origin,k] + hub_node_cost[hubs.index(k),destination], k) for k in available_hubs)
             new_route = (origin,reroute_cost_hub[1],int(hub_node[hubs.index(reroute_cost_hub[1]), destination]),destination)
-            reroute_flow_value = min(reroute_flow[1], exceed[k])
+            reroute_flow_value = min(reroute_flow[1], exceed[k], -exceed[reroute_cost_hub[1]])
             if reroute_flow_value == reroute_flow[1]:
                 flow[k].pop(reroute_flow_i)
             else:
