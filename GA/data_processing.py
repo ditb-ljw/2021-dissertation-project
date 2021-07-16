@@ -22,7 +22,6 @@ for i in data:
 #print(C[:10,:10])
 
 
-
 def CAB_data_processing(W, C, N_P_case, gamma_alpha_case):
 
     N_P_test_cases = {0: [15, 10], 1: [15, 15], 2: [20, 10], 3: [20, 15], 4: [20, 20], 5: [25, 10], 6: [25, 15], 7: [25, 20], 8: [25, 25]}
@@ -34,9 +33,6 @@ def CAB_data_processing(W, C, N_P_case, gamma_alpha_case):
     S = 5
     Q = 5
     beta = 0.2
-    # Total flow originated at node k
-    O_k = np.sum(W, axis = 1)
-    f_k_1 = T*15*np.log(O_k)
 
     N_P = N_P_test_cases[N_P_case]
     N = N_P[0]
@@ -45,6 +41,10 @@ def CAB_data_processing(W, C, N_P_case, gamma_alpha_case):
     gamma = gamma_alpha[0]
     alpha = gamma_alpha[1]
 
+    # Total flow originated at node k
+    O_k = np.sum(W[:N, :N], axis = 1)
+    f_k_1 = T*15*np.log(O_k)
+
     f_k_t = np.zeros([T, N])
     f_k_t[0,:] = f_k_1
     for i in range(T-1):
@@ -52,27 +52,26 @@ def CAB_data_processing(W, C, N_P_case, gamma_alpha_case):
 
     initial_f_k_q_1 = np.zeros([N, Q+1])
     for q in range(Q+1):
-        initial_f_k_q_1[:,1] = beta*f_k_1*q
+        initial_f_k_q_1[:,q] = beta*f_k_1*q
     initial_f_k_q_t = {0: initial_f_k_q_1}
     for t in range(T-1):
         initial_f_k_q_t[t+1] = 1.02*initial_f_k_q_t[t]
 
     initial_m_k_q_1 = np.zeros([N, Q+1])
     for q in range(Q+1):
-        initial_m_k_q_1[:,1] = 0.6*beta*f_k_1*q
+        initial_m_k_q_1[:,q] = 0.6*beta*f_k_1*q
     initial_m_k_q_t = {0: initial_m_k_q_1}
     for t in range(T-1):
         initial_m_k_q_t[t+1] = 1.02*initial_m_k_q_t[t]
 
     additional_f_k_q_1 = np.zeros([N, Q+1])
     for q in range(Q+1):
-        additional_f_k_q_1[:,1] = 2*beta*f_k_1*q
+        additional_f_k_q_1[:,q] = 2*beta*f_k_1*q
     additional_f_k_q_t = {0: additional_f_k_q_1}
     for t in range(T-1):
         additional_f_k_q_t[t+1] = 1.02*additional_f_k_q_t[t]
 
     additional_m_k_q_t = initial_m_k_q_t.copy()
-
 
     g_k_q_t = {}
     sum_initial_operating = sum(initial_m_k_q_t.values())
@@ -87,12 +86,13 @@ def CAB_data_processing(W, C, N_P_case, gamma_alpha_case):
         sum_additional_operating -= additional_m_k_q_t[t]
 
     # demands
-    scaled_W = W/np.sum(W)
+    scaled_W = W[:N, :N]/np.sum(W[:N, :N])
     demand_dict = {s: [] for s in range(S)}
     for s in range(S):
         demand_dict[s].append(scaled_W)
         for t in range(1,T):
             W_ij_s_t = demand_dict[s][t-1]*(1 + 6/100*(s+1))
+            demand_dict[s].append(W_ij_s_t)
 
     return P, [Q]*N, [X, alpha, delta], demand_dict, list(range(S)), gamma, f_k_t, g_k_q_t, h_k_q_t
 
