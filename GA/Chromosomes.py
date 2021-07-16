@@ -1,6 +1,5 @@
 import numpy as np
 import random
-from GA.data_processing import test_data
 
 
 def shortest_paths_allocation(hubs, non_hubs, distance, coefficients):
@@ -230,15 +229,43 @@ class chromosome():
     chromosome: a matrix of initial capacity(module) of each hub in each period
     '''
 
-    def __init__(self, initial_capacity_matrix):
+    def __init__(self, initial_capacity_matrix, distance, hub_locations, coefficients, demand_dict, highest_originate, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict):
         '''
         Constructor of chromosome.
 
         Input:
             initial_capacity_matrix (ndarray): initial capacity(module) of each hub in each period
+            distance (ndarray): A matrix containing distance from each node to another node
+            hub_locations (list): Indices of potential locations for the hubs
+            #max_capacity (list): Maximum number of modules that can be installed in a hub
+            coefficients (list, length 3): Collection cost, transfer cost and distribution cost
+            demand_dict (dictionary: {scenario: [ndarray, ...]}): Dictionary of demand matrices in each time period for each scenario
+            highest_originate (ndarray): Highest total amount of flow originated at each node in each time period
+            #scenarios (list): Different scenarios
+            #probabilities (dictionary: {scenario: probability}): Probability that each scenario occurs
+            module_capacity (float): Capacity of a module
+            install_hub_cost_matrix (ndarray): Cost for installing each hub in each time period
+            initial_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building and operating different numbers of initial modules for each node in different time periods
+            additional_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building different numbers of additional modules for each node in different time periods
         '''
 
         self.initial_capacity_matrix = initial_capacity_matrix
+        self.distance = distance
+        self.hub_locations = hub_locations
+
+        node_number = initial_capacity_matrix.shape[1]
+        max_capacity = [5 if i in hub_locations else 0 for i in range(node_number)]
+        self.max_capacity = max_capacity
+
+        self.coefficients = coefficients
+        self.demand_dict = demand_dict
+        self.highest_originate = highest_originate
+        self.scenarios = [0, 1, 2, 3, 4]
+        self.probabilities = {0: 0.2, 1: 0.2, 2: 0.2, 3: 0.2, 4: 0.2}
+        self.module_capacity = module_capacity
+        self.install_hub_cost_matrix = install_hub_cost_matrix
+        self.initial_capacity_cost_dict = initial_capacity_cost_dict
+        self.additional_capacity_cost_dict = additional_capacity_cost_dict
 
 
     def fitness(self):
@@ -264,7 +291,13 @@ class chromosome():
             capacity_expansion (dictionary: {scenario: ndarray, ...}): Additional modules for each hub in each time period for each scenario
         '''
 
-        distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict = test_data()
+        if self.if_feasible() == False:
+            return 0
+
+        distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, \
+        module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict = \
+        self.distance, self.max_capacity, self.coefficients, self.demand_dict, self.scenarios, self.probabilities, \
+        self.module_capacity, self.install_hub_cost_matrix, self.initial_capacity_cost_dict, self.additional_capacity_cost_dict
 
         total_cost = 0
         maximal_capacity = max_capacity.copy()
@@ -335,7 +368,9 @@ class chromosome():
 
         Data:
             initial_capacity_matrix (ndarray): initial capacity(module) of each hub in each period
+            hub_locations (list): Indices of potential locations for the hubs
             demand_dict (dictionary: {scenario: [ndarray, ...]}): Dictionary of demand matrices in each time period for each scenario
+            highest_originate (ndarray): Highest total amount of flow originated at each node in each time period
             scenarios (list): Different scenarios
             max_capacity (list): Maximum number of modules that can be installed in a hub
             module_capacity (float): Capacity of a module
@@ -344,18 +379,19 @@ class chromosome():
             boolean: True if feasible, False if infeasible
         '''
 
-        max_capacity = test_data()[1]
-        demand_dict = test_data()[3]
-        scenarios = test_data()[4]
-        module_capacity = test_data()[6]
+        hub_locations, max_capacity, demand_dict, highest_originate, scenarios, module_capacity = \
+        self.hub_locations, self.max_capacity, self.demand_dict, self.highest_originate, self.scenarios, self.module_capacity
 
-        # There must be at most one positive number in each column
         for j in range(self.initial_capacity_matrix.shape[1]):
             positive_entries = 0
             for i in range(self.initial_capacity_matrix.shape[0]):
                 if self.initial_capacity_matrix[i, j] > 0:
                     positive_entries += 1
+                # There must be at most one positive number in each column
                 if positive_entries > 1:
+                    return False
+                # Only nodes in the list of potential locations for hubs can become hubs
+                if j not in hub_locations and positive_entries > 0:
                     return False
 
         # The total initial capacity in each period(0 if no new hub is built) should be greater than or equal to
@@ -380,5 +416,12 @@ class chromosome():
         for i in range(len(total_initial_capacity)):
             if total_initial_capacity[i]*module_capacity < max_demand[i] - total_maximal_capacity[i]*module_capacity:
                 return False
+
+        # The initial capacity for each hub in each period should be greater or equal to the highest total amount of flow originated at the hub
+        for t in range(self.initial_capacity_matrix.shape[0]):
+            for k in hub_locations:
+                initial_capacity_k_t = self.initial_capacity_matrix[t, k]
+                if initial_capacity_k_t > 0 and initial_capacity_k_t < highest_originate[t, k]:
+                    return False
 
         return True
