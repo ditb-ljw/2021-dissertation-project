@@ -120,7 +120,7 @@ def CAB_data_processing(W, C, N_P, gamma_alpha):
             W_ij_s_t = demand_dict[s][t-1]*(1 + 6/100*(s+1))
             demand_dict[s].append(W_ij_s_t)
     # Highest total amount of flow originated at node k in time t
-    highest_originate = np.zeros([T, N])
+    highest_originate = np.zeros([T, N], dtype=int)
     for t in range(T):
         for i in range(N):
             highest_originate_t_i = max(np.sum(demand_dict[s][t][i,:]) for s in range(S))
