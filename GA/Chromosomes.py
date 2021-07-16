@@ -255,7 +255,7 @@ class chromosome():
             probabilities (dictionary: {scenario: probability}): Probability that each scenario occurs
             module_capacity (float): Capacity of a module
             install_hub_cost_matrix (ndarray): Cost for installing each hub in each time period
-            initial_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building different numbers of initial modules for each node in different time periods
+            initial_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building and operating different numbers of initial modules for each node in different time periods
             additional_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building different numbers of additional modules for each node in different time periods
 
         Output:
