@@ -291,7 +291,7 @@ class chromosome():
             capacity_expansion (dictionary: {scenario: ndarray, ...}): Additional modules for each hub in each time period for each scenario
         '''
 
-        if self.if_feasible() == False:
+        if self.is_feasible() == False:
             return 0
 
         distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, \
@@ -362,7 +362,7 @@ class chromosome():
         return fitness_value, flow_routing, capacity_expansion
 
 
-    def if_feasible(self):
+    def is_feasible(self):
         '''
         Check if the chromosome is feasible.
 
