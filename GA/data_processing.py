@@ -33,11 +33,10 @@ def CAB_data_processing(W, C, N_P, gamma_alpha):
         gamma_alpha (list, length: 2): Combination of value of gamma and alpha
 
     Output:
-        P (int): Number of potential locations for the hubs
-        Q (int): Maximum number of modules that can be installed in a hub
+        C[:N, :N] (ndarray): Distance(cost) matrix of nodes in N
         [X, alpha, delta] (list): Collection cost, transfer cost and distribution cost
         demand_dict (dictionary: {scenario: [ndarray, ...]}): Dictionary of demand matrices in each time period for each scenario
-        list(range(S)) (list): Different scenarios
+        highest_originate (ndarray): Highest total amount of flow originated at each node in each time period
         gamma (float): Capacity of a module
         f_k_t (ndarray): Cost for installing each hub in each time period
         g_k_q_t (dictionary: {time_period: nparray, ...}): Cost for building and operating different numbers of initial modules for each node in different time periods
@@ -120,5 +119,11 @@ def CAB_data_processing(W, C, N_P, gamma_alpha):
         for t in range(1,T):
             W_ij_s_t = demand_dict[s][t-1]*(1 + 6/100*(s+1))
             demand_dict[s].append(W_ij_s_t)
+    # Highest total amount of flow originated at node k in time t
+    highest_originate = np.zeros([T, N])
+    for t in range(T):
+        for i in range(N):
+            highest_originate_t_i = max(np.sum(demand_dict[s][t][i,:]) for s in range(S))
+            highest_originate[t,i] = np.ceil(highest_originate_t_i/gamma)
 
-    return C[:N, :N], [X, alpha, delta], demand_dict, gamma, f_k_t, g_k_q_t, h_k_q_t
+    return C[:N, :N], [X, alpha, delta], demand_dict, highest_originate, gamma, f_k_t, g_k_q_t, h_k_q_t
