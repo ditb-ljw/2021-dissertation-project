@@ -121,25 +121,4 @@ def CAB_data_processing(W, C, N_P, gamma_alpha):
             W_ij_s_t = demand_dict[s][t-1]*(1 + 6/100*(s+1))
             demand_dict[s].append(W_ij_s_t)
 
-    return P, Q, [X, alpha, delta], demand_dict, list(range(S)), gamma, f_k_t, g_k_q_t, h_k_q_t
-
-
-
-
-def test_data():
-
-    distance = C
-
-    max_capacity = [5]*25
-    coefficients = [1,1,1]
-    demand_dict = {0: [W[:5,:5], W[:5,:5], W[:5,:5]]}
-    scenarios = [0, 1, 2, 3, 4]
-
-    probabilities = {0: 0.2, 1: 0.2, 2: 0.2, 3: 0.2, 4: 0.2}
-
-    module_capacity = 100000
-    install_hub_cost_matrix = np.array([[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]])
-    capacity_cost = np.array([np.arange(31), np.arange(31), np.arange(31), np.arange(31), np.arange(31)])
-    initial_capacity_cost_dict = {0: capacity_cost, 1: capacity_cost, 2: capacity_cost}
-    additional_capacity_cost_dict = {0: capacity_cost, 1: capacity_cost, 2: capacity_cost}
-    return distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict
+    return C[:N, :N], [X, alpha, delta], demand_dict, gamma, f_k_t, g_k_q_t, h_k_q_t
