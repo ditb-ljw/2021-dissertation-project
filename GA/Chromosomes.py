@@ -229,12 +229,15 @@ class chromosome():
     chromosome: a matrix of initial capacity(module) of each hub in each period
     '''
 
-    def __init__(self, initial_capacity_matrix, distance, hub_locations, coefficients, demand_dict, highest_originate, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict):
+    def __init__(self, initial_capacity_matrix, test_data):
         '''
         Constructor of chromosome.
 
         Input:
-            initial_capacity_matrix (ndarray): initial capacity(module) of each hub in each period
+        initial_capacity_matrix (ndarray): initial capacity(module) of each hub in each period
+        test_data (dictionary): {'distance': ndarray, 'hub_locations': list, 'coefficients': list, 'demand_dict': dictionary,
+                                'highest_originate': ndarray, 'module_capacity': float, 'install_hub_cost_matrix': ndarray,
+                                'initial_capacity_cost_dict': dictionary, 'additional_capacity_cost_dict': dictionary}
             distance (ndarray): A matrix containing distance from each node to another node
             hub_locations (list): Indices of potential locations for the hubs
             #max_capacity (list): Maximum number of modules that can be installed in a hub
@@ -250,22 +253,22 @@ class chromosome():
         '''
 
         self.initial_capacity_matrix = initial_capacity_matrix
-        self.distance = distance
-        self.hub_locations = hub_locations
+        self.distance = test_data['distance']
+        self.hub_locations = test_data['hub_locations']
 
         node_number = initial_capacity_matrix.shape[1]
-        max_capacity = [5 if i in hub_locations else 0 for i in range(node_number)]
+        max_capacity = [5 if i in test_data['hub_locations'] else 0 for i in range(node_number)]
         self.max_capacity = max_capacity
 
-        self.coefficients = coefficients
-        self.demand_dict = demand_dict
-        self.highest_originate = highest_originate
+        self.coefficients = test_data['coefficients']
+        self.demand_dict = test_data['demand_dict']
+        self.highest_originate = test_data['highest_originate']
         self.scenarios = [0, 1, 2, 3, 4]
         self.probabilities = {0: 0.2, 1: 0.2, 2: 0.2, 3: 0.2, 4: 0.2}
-        self.module_capacity = module_capacity
-        self.install_hub_cost_matrix = install_hub_cost_matrix
-        self.initial_capacity_cost_dict = initial_capacity_cost_dict
-        self.additional_capacity_cost_dict = additional_capacity_cost_dict
+        self.module_capacity = test_data['module_capacity']
+        self.install_hub_cost_matrix = test_data['install_hub_cost_matrix']
+        self.initial_capacity_cost_dict = test_data['initial_capacity_cost_dict']
+        self.additional_capacity_cost_dict = test_data['additional_capacity_cost_dict']
 
 
     def fitness(self):
