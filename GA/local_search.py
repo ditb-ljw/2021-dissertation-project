@@ -341,3 +341,57 @@ def generate_initial_chromosome(pop_size, test_data):
         initial_matrix_list.append(initial_capacity_matrix)
 
     return initial_chromosome_list
+
+
+def find_neighbourhood(input_chromosome, iter_times):
+    '''
+    Find a chromosome with higher fitness value in the neighbourhood of the input chromosome within limited iteration times.
+    If cannot find such chromosome, consider the input_chromosome as the local optimum.
+
+    Input:
+        input_chromosome (object: chromosome): A chromosome
+        iter_times (int): Iteration times
+
+    Output:
+        neighbourhood_chromosome (object: chromosome): A chromosome with higher fitness value in the neighbourhood of the input chromosome
+        (input_chromosome (object: chromosome): The input chromosome)
+    '''
+
+    input_matrix = input_chromosome.initial_capacity_matrix
+    input_fitness = input_chromosome.fitness()[0]
+    print(input_matrix)
+    print(input_fitness)
+    test_data = input_chromosome.test_data
+    hub_locations = test_data['hub_locations']
+    highest_originate = test_data['highest_originate']
+
+    neighbourhood_matrix_list = []
+
+    for i in range(iter_times):
+        print(i)
+        feasiblity = False
+        while feasiblity == False:
+        # Randomly generate neighbourhood matrices until getting a feasible one
+            neighbourhood_matrix = rand_neighbourhood(input_matrix, hub_locations, highest_originate)
+
+            repeating_matrix = True
+            while repeating_matrix == True:
+            # Matrices should be different from each other
+                for j in neighbourhood_matrix_list:
+                    if (neighbourhood_matrix == j).all():
+                        neighbourhood_matrix = rand_neighbourhood(input_matrix, hub_locations, highest_originate)
+                        break
+                repeating_matrix = False
+
+            neighbourhood_chromosome = chromosome(neighbourhood_matrix, test_data)
+            feasiblity = neighbourhood_chromosome.is_feasible()
+
+        neighbourhood_matrix_list.append(neighbourhood_matrix)
+        neighbourhood_matrix_fitness = neighbourhood_chromosome.fitness()[0]
+
+        if neighbourhood_matrix_fitness > input_fitness:
+            print(neighbourhood_matrix)
+            print(neighbourhood_matrix_fitness)
+            return neighbourhood_chromosome
+
+    return input_chromosome
