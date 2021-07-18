@@ -1,8 +1,7 @@
 import numpy as np
 from GA.Chromosomes import chromosome
 from GA.data_processing import W, C, CAB_data_processing
-from GA.local_search import rand_chromosome_matrix
-from GA.local_search import rand_neighbourhood
+from GA.local_search import rand_chromosome_matrix, rand_neighbourhood, generate_initial_chromosome, find_neighbourhood
 
 N_P = [15, 10]
 gamma_alpha = [0.075, 0.2]
@@ -26,3 +25,9 @@ print(test_a.fitness())
 test_b = chromosome(neighbourhood_matrix, test_data)
 print(test_b.is_feasible())
 print(test_b.fitness())
+
+
+
+initial_chromosome_list = generate_initial_chromosome(1, test_data)
+initial_capacity_matrix = initial_chromosome_list[0].initial_capacity_matrix
+a = find_neighbourhood(initial_chromosome_list[0], 10)
