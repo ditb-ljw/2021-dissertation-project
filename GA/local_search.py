@@ -85,7 +85,8 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
                                 available_hubs.remove(relocate_location)
 
                     # Relocate the closed hub in a different time period but at the same location
-                    available_time_periods = [0,1,2].remove(rand_time)
+                    available_time_periods = [0,1,2]
+                    available_time_periods.remove(rand_time)
                     # Randomly choose a time period to relocate the hub
                     relocate_time_period = random.choice(available_time_periods)
                     module_number = max(chromosome_matrix[rand_time, rand_hub], highest_originate[relocate_time_period, rand_hub])
@@ -131,7 +132,8 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
 
                 else:
                 # There is a hub built at this location in a time period, so adjust the set up time of the hub to this time period
-                    available_time_periods = [0,1,2].remove(rand_time)
+                    available_time_periods = [0,1,2]
+                    available_time_periods.remove(rand_time)
                     # Randomly choose a time period when a hub was built
                     chosen_time_period = random.choice(available_time_periods)
                     chosen_hub_capacity = chromosome_matrix[chosen_time_period, rand_hub]
@@ -173,7 +175,7 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
                             return neighbourhood_matrix
                         else:
                         # The capacity of the chosen hub has reached the maximum limit
-                            available_hubs.remove(relocate_location)
+                            available_hubs.remove(reinstall_hub)
 
                     # There is no hub in available_hubs
                     # Cannot reinstall module
@@ -216,7 +218,7 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
                                 return neighbourhood_matrix
                             else:
                             # The capacity of the chosen hub is 0
-                                available_hubs.remove(relocate_location)
+                                available_hubs.remove(reinstall_hub)
 
                         # There is no hub in available_hubs
                         # Cannot reinstall module
@@ -238,7 +240,7 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
                                 return neighbourhood_matrix
                             else:
                             # The capacity of the chosen hub has reached the maximum limit
-                                available_hubs.remove(relocate_location)
+                                available_hubs.remove(reinstall_hub)
 
                         # There is no hub in available_hubs
                         # Cannot reinstall module
