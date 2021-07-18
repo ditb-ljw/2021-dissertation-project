@@ -1,5 +1,6 @@
 import numpy as np
 import random
+from GA.Chromosomes import chromosome
 
 
 def rand_chromosome_matrix(N_num, hub_locations, highest_originate):
@@ -34,6 +35,17 @@ def rand_chromosome_matrix(N_num, hub_locations, highest_originate):
 
 
 def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
+    '''
+    Randomly generate a neighbourhood matrix(may be infeasible) of the input matrix.
+
+    Input:
+        chromosome_matrix (ndarray): A random initial capacity(module) matrix for chromosome
+        hub_locations (list): Indices of potential locations for the hubs
+        highest_originate (ndarray): Highest total amount of flow originated at each node in each time period
+
+    Output:
+        neighbourhood_matrix (ndarray): A neighbourhood matrix(may be infeasible) of the input matrix
+    '''
 
     neighbourhood_matrix = chromosome_matrix.copy()
 
@@ -283,3 +295,49 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
                     rand_time = random.choice([0,1,2])
                     rand_hub = random.choice(hub_locations)
                 rand_entry.append((rand_time, rand_hub))
+
+
+def generate_initial_chromosome(pop_size, test_data):
+    '''
+    Randomly generate feasible initial population.
+
+    Input:
+        pop_size (int): Number of initial chromosomes
+        test_data (dictionary): {'distance': ndarray, 'hub_locations': list, 'coefficients': list, 'demand_dict': dictionary,
+                                'highest_originate': ndarray, 'module_capacity': float, 'install_hub_cost_matrix': ndarray,
+                                'initial_capacity_cost_dict': dictionary, 'additional_capacity_cost_dict': dictionary}
+
+    Output:
+        initial_chromosome_list (list, length:pop_size): List of initial population
+
+    '''
+
+    hub_locations = test_data['hub_locations']
+    highest_originate = test_data['highest_originate']
+    N_num = highest_originate.shape[1]
+
+    initial_matrix_list = []
+    initial_chromosome_list = []
+
+    for i in range(pop_size):
+        feasiblity = False
+        while feasiblity == False:
+        # Randomly generate matrices until getting a feasible one
+            initial_capacity_matrix = rand_chromosome_matrix(N_num, hub_locations, highest_originate)
+
+            repeating_matrix = True
+            while repeating_matrix == True:
+            # Matrices should be different from each other
+                for j in initial_matrix_list:
+                    if (initial_capacity_matrix == j).all():
+                        initial_capacity_matrix = rand_chromosome_matrix(N_num, hub_locations, highest_originate)
+                        break
+                repeating_matrix = False
+
+            initial_chromosome = chromosome(initial_capacity_matrix, test_data)
+            feasiblity = initial_chromosome.is_feasible()
+
+        initial_chromosome_list.append(initial_chromosome)
+        initial_matrix_list.append(initial_capacity_matrix)
+
+    return initial_chromosome_list
