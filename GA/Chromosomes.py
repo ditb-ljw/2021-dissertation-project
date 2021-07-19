@@ -253,6 +253,8 @@ class chromosome():
         '''
 
         self.initial_capacity_matrix = initial_capacity_matrix
+        self.test_data = test_data
+
         self.distance = test_data['distance']
         self.hub_locations = test_data['hub_locations']
 
