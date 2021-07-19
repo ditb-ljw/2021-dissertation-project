@@ -337,6 +337,7 @@ def generate_initial_chromosome(pop_size, test_data):
             initial_chromosome = chromosome(initial_capacity_matrix, test_data)
             feasiblity = initial_chromosome.is_feasible()
 
+        initial_chromosome.calculate_fitness()
         initial_chromosome_list.append(initial_chromosome)
         initial_matrix_list.append(initial_capacity_matrix)
 
@@ -358,7 +359,7 @@ def find_neighbourhood(input_chromosome, iter_times):
     '''
 
     input_matrix = input_chromosome.initial_capacity_matrix
-    input_fitness = input_chromosome.fitness()[0]
+    input_fitness = input_chromosome.fitness
     test_data = input_chromosome.test_data
     hub_locations = test_data['hub_locations']
     highest_originate = test_data['highest_originate']
@@ -384,7 +385,8 @@ def find_neighbourhood(input_chromosome, iter_times):
             feasiblity = neighbourhood_chromosome.is_feasible()
 
         neighbourhood_matrix_list.append(neighbourhood_matrix)
-        neighbourhood_matrix_fitness = neighbourhood_chromosome.fitness()[0]
+        neighbourhood_chromosome.calculate_fitness()
+        neighbourhood_matrix_fitness = neighbourhood_chromosome.fitness
 
         if neighbourhood_matrix_fitness > input_fitness:
             return neighbourhood_chromosome
@@ -393,27 +395,43 @@ def find_neighbourhood(input_chromosome, iter_times):
 
 
 def local_optimum(input_chromosome, move_times, neighbourhood_numbers):
+    '''
+    Within limited move times, find a local optimum by keeping searching and moving to a neighbourhood chromosome
+    with higher fitness value.
+
+    Input:
+        input_chromosome (object: chromosome): A chromosome
+        move_times (int): Maximal move times
+        neighbourhood_numbers (int): Maximal number of neighbourhood chromosomes which can be searched for one with higher fitness
+
+    Output:
+        improved_chromosome (object: chromosome): A local optimum or improved chromosome with higher fitness value than that of the input chromosome
+    '''
 
     initial_chromosome = input_chromosome
-    initial_fitness = initial_chromosome.fitness()[0]
+    initial_fitness = initial_chromosome.fitness
+#    print('initial fitness')
+#    print(initial_fitness)
 
     improved_chromosome = find_neighbourhood(input_chromosome, neighbourhood_numbers)
-    improved_fitness = improved_chromosome.fitness()[0]
-
+    improved_fitness = improved_chromosome.fitness
+#    print('improved fitness')
+#    print(improved_fitness)
 
     move = 0
     while improved_fitness != initial_fitness and move < move_times:
-        print(move)
-
+    # Stop if local optimum has been found or move time limit has been reached
+#        print(move)
+        # Move to the neighbourhood chromosome with higher fitness value than that of the initial one
         initial_chromosome = improved_chromosome
-        initial_fitness = improved_chromosome.fitness()[0]
-        print('initial fitness')
-        print(initial_fitness)
+        initial_fitness = improved_fitness
+#        print('initial fitness')
+#        print(initial_fitness)
 
         improved_chromosome = find_neighbourhood(initial_chromosome, neighbourhood_numbers)
-        improved_fitness = improved_chromosome.fitness()[0]
-        print('improved fitness')
-        print(improved_fitness)
+        improved_fitness = improved_chromosome.fitness
+#        print('improved fitness')
+#        print(improved_fitness)
 
         move += 1
 
