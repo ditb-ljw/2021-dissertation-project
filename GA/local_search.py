@@ -281,7 +281,7 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
                             return neighbourhood_matrix
                         else:
                         # The capacity of the chosen hub is 0
-                            available_hubs.remove(relocate_location)
+                            available_hubs.remove(reinstall_hub)
 
                     # There is no hub in available_hubs
                     # Cannot reinstall module
@@ -359,8 +359,6 @@ def find_neighbourhood(input_chromosome, iter_times):
 
     input_matrix = input_chromosome.initial_capacity_matrix
     input_fitness = input_chromosome.fitness()[0]
-    print(input_matrix)
-    print(input_fitness)
     test_data = input_chromosome.test_data
     hub_locations = test_data['hub_locations']
     highest_originate = test_data['highest_originate']
@@ -368,7 +366,6 @@ def find_neighbourhood(input_chromosome, iter_times):
     neighbourhood_matrix_list = []
 
     for i in range(iter_times):
-        print(i)
         feasiblity = False
         while feasiblity == False:
         # Randomly generate neighbourhood matrices until getting a feasible one
@@ -390,8 +387,34 @@ def find_neighbourhood(input_chromosome, iter_times):
         neighbourhood_matrix_fitness = neighbourhood_chromosome.fitness()[0]
 
         if neighbourhood_matrix_fitness > input_fitness:
-            print(neighbourhood_matrix)
-            print(neighbourhood_matrix_fitness)
             return neighbourhood_chromosome
 
     return input_chromosome
+
+
+def local_optimum(input_chromosome, move_times, neighbourhood_numbers):
+
+    initial_chromosome = input_chromosome
+    initial_fitness = initial_chromosome.fitness()[0]
+
+    improved_chromosome = find_neighbourhood(input_chromosome, neighbourhood_numbers)
+    improved_fitness = improved_chromosome.fitness()[0]
+
+
+    move = 0
+    while improved_fitness != initial_fitness and move < move_times:
+        print(move)
+
+        initial_chromosome = improved_chromosome
+        initial_fitness = improved_chromosome.fitness()[0]
+        print('initial fitness')
+        print(initial_fitness)
+
+        improved_chromosome = find_neighbourhood(initial_chromosome, neighbourhood_numbers)
+        improved_fitness = improved_chromosome.fitness()[0]
+        print('improved fitness')
+        print(improved_fitness)
+
+        move += 1
+
+    return improved_chromosome
