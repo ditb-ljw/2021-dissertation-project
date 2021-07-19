@@ -226,7 +226,7 @@ def hub_capacity_cost(new_hubs, initial_capacity, add_capacity, install_hub_cost
 
 class chromosome():
     '''
-    chromosome: a matrix of initial capacity(module) of each hub in each period
+    Chromosome: a matrix of initial capacity(module) of each hub in each period
     '''
 
     def __init__(self, initial_capacity_matrix, test_data):
@@ -234,51 +234,44 @@ class chromosome():
         Constructor of chromosome.
 
         Input:
-        initial_capacity_matrix (ndarray): initial capacity(module) of each hub in each period
+        initial_capacity_matrix (ndarray): Initial capacity(module) of each hub in each period
         test_data (dictionary): {'distance': ndarray, 'hub_locations': list, 'coefficients': list, 'demand_dict': dictionary,
                                 'highest_originate': ndarray, 'module_capacity': float, 'install_hub_cost_matrix': ndarray,
                                 'initial_capacity_cost_dict': dictionary, 'additional_capacity_cost_dict': dictionary}
             distance (ndarray): A matrix containing distance from each node to another node
             hub_locations (list): Indices of potential locations for the hubs
-            #max_capacity (list): Maximum number of modules that can be installed in a hub
             coefficients (list, length 3): Collection cost, transfer cost and distribution cost
             demand_dict (dictionary: {scenario: [ndarray, ...]}): Dictionary of demand matrices in each time period for each scenario
             highest_originate (ndarray): Highest total amount of flow originated at each node in each time period
-            #scenarios (list): Different scenarios
-            #probabilities (dictionary: {scenario: probability}): Probability that each scenario occurs
             module_capacity (float): Capacity of a module
             install_hub_cost_matrix (ndarray): Cost for installing each hub in each time period
             initial_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building and operating different numbers of initial modules for each node in different time periods
             additional_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building different numbers of additional modules for each node in different time periods
+
+        Attributes:
+        initial_capacity_matrix (ndarray): Initial capacity(module) of each hub in each period
+        test_data (dictionary): {'distance': ndarray, 'hub_locations': list, 'coefficients': list, 'demand_dict': dictionary,
+                                'highest_originate': ndarray, 'module_capacity': float, 'install_hub_cost_matrix': ndarray,
+                                'initial_capacity_cost_dict': dictionary, 'additional_capacity_cost_dict': dictionary}
+        fitness (float): The fitness value(1/objective value) for a chromosome
+        flow_routing (dictionary: {scenario:[flow in period 0, ...], ...}): The route and amount of flow in each time period for each scenario
+        capacity_expansion (dictionary: {scenario: ndarray, ...}): Additional modules for each hub in each time period for each scenario
         '''
 
         self.initial_capacity_matrix = initial_capacity_matrix
         self.test_data = test_data
 
-        self.distance = test_data['distance']
-        self.hub_locations = test_data['hub_locations']
-
-        node_number = initial_capacity_matrix.shape[1]
-        max_capacity = [5 if i in test_data['hub_locations'] else 0 for i in range(node_number)]
-        self.max_capacity = max_capacity
-
-        self.coefficients = test_data['coefficients']
-        self.demand_dict = test_data['demand_dict']
-        self.highest_originate = test_data['highest_originate']
-        self.scenarios = [0, 1, 2, 3, 4]
-        self.probabilities = {0: 0.2, 1: 0.2, 2: 0.2, 3: 0.2, 4: 0.2}
-        self.module_capacity = test_data['module_capacity']
-        self.install_hub_cost_matrix = test_data['install_hub_cost_matrix']
-        self.initial_capacity_cost_dict = test_data['initial_capacity_cost_dict']
-        self.additional_capacity_cost_dict = test_data['additional_capacity_cost_dict']
+        self.fitness = 0
+        self.flow_routing = {}
+        self.capacity_expansion = {}
 
 
-    def fitness(self):
+    def calculate_fitness(self):
         '''
-        Calculate the fitness value(1/objective value) for a chromosome
+        Calculate the fitness value(1/objective value) and get the corresponding flow routing and additional modules for a chromosome
 
         Data:
-            initial_capacity_matrix (ndarray): initial capacity(module) of each hub in each period
+            initial_capacity_matrix (ndarray): Initial capacity(module) of each hub in each period
             distance (ndarray): A matrix containing distance from each node to another node
             max_capacity (list): Maximum number of modules that can be installed in a hub
             coefficients (list, length 3): Collection cost, transfer cost and distribution cost
@@ -289,20 +282,26 @@ class chromosome():
             install_hub_cost_matrix (ndarray): Cost for installing each hub in each time period
             initial_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building and operating different numbers of initial modules for each node in different time periods
             additional_capacity_cost_dict (dictionary: {time_period: nparray, ...}): Cost for building different numbers of additional modules for each node in different time periods
-
-        Output:
-            fitness_value (float): The fitness value(1/objective value) for a chromosome
-            flow_routing (dictionary: {scenario:[flow in period 0, ...], ...}): The route and amount of flow in each time period for each scenario
-            capacity_expansion (dictionary: {scenario: ndarray, ...}): Additional modules for each hub in each time period for each scenario
         '''
 
-        if self.is_feasible() == False:
-            return 0
+        test_data = self.test_data
 
-        distance, max_capacity, coefficients, demand_dict, scenarios, probabilities, \
-        module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict = \
-        self.distance, self.max_capacity, self.coefficients, self.demand_dict, self.scenarios, self.probabilities, \
-        self.module_capacity, self.install_hub_cost_matrix, self.initial_capacity_cost_dict, self.additional_capacity_cost_dict
+        if self.is_feasible() == False:
+            return None
+
+        distance = test_data['distance']
+        hub_locations = test_data['hub_locations']
+        node_number = self.initial_capacity_matrix.shape[1]
+        max_capacity = [5 if i in hub_locations else 0 for i in range(node_number)]
+        coefficients = test_data['coefficients']
+        demand_dict = test_data['demand_dict']
+        highest_originate = test_data['highest_originate']
+        scenarios = [0, 1, 2, 3, 4]
+        probabilities = {0: 0.2, 1: 0.2, 2: 0.2, 3: 0.2, 4: 0.2}
+        module_capacity = test_data['module_capacity']
+        install_hub_cost_matrix = test_data['install_hub_cost_matrix']
+        initial_capacity_cost_dict = test_data['initial_capacity_cost_dict']
+        additional_capacity_cost_dict = test_data['additional_capacity_cost_dict']
 
         total_cost = 0
         maximal_capacity = max_capacity.copy()
@@ -326,7 +325,7 @@ class chromosome():
                 hubs = old_hubs + new_hubs
                 # Infeasible
                 if hubs == []:
-                    return 0
+                    return None
 
                 non_hubs = [i for i in range(self.initial_capacity_matrix.shape[1]) if i not in hubs]
                 max_hub_capacity = maximal_capacity.copy()
@@ -340,7 +339,7 @@ class chromosome():
                     flow_routing[s].append(flow)
                 # Infeasible
                 except TypeError:
-                    return 0
+                    return None
                 cost_flow = flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients)
 
                 for j in new_hubs:
@@ -364,7 +363,11 @@ class chromosome():
 
         fitness_value = 1/total_cost
 
-        return fitness_value, flow_routing, capacity_expansion
+        self.fitness = fitness_value
+        self.flow_routing = flow_routing
+        self.capacity_expansion = capacity_expansion
+
+        return None
 
 
     def is_feasible(self):
@@ -384,8 +387,15 @@ class chromosome():
             boolean: True if feasible, False if infeasible
         '''
 
-        hub_locations, max_capacity, demand_dict, highest_originate, scenarios, module_capacity = \
-        self.hub_locations, self.max_capacity, self.demand_dict, self.highest_originate, self.scenarios, self.module_capacity
+        test_data = self.test_data
+
+        hub_locations = test_data['hub_locations']
+        node_number = self.initial_capacity_matrix.shape[1]
+        max_capacity = [5 if i in hub_locations else 0 for i in range(node_number)]
+        demand_dict = test_data['demand_dict']
+        highest_originate = test_data['highest_originate']
+        scenarios = [0, 1, 2, 3, 4]
+        module_capacity = test_data['module_capacity']
 
         for j in range(self.initial_capacity_matrix.shape[1]):
             positive_entries = 0
