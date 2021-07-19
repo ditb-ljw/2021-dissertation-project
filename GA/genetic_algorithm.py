@@ -72,3 +72,41 @@ def one_pt_col_crossover(chromosome_1, chromosome_2):
     child_chromosome_2 = chromosome(child_matrix_2, test_data)
 
     return child_chromosome_1, child_chromosome_2
+
+
+def uniform_col_crossover(chromosome_1, chromosome_2):
+    '''
+    Uniform crossover(column): Assign 'heads' to one parent, 'tails' to the other,
+    Flip a coin for each column of the first child,
+    Make an inverse copy of the column for the second child.
+
+    Input:
+        chromosome_1 (object: chromosome): One of the parent chromosomes
+        chromosome_2 (object: chromosome): One of the parent chromosomes
+
+    Output:
+        child_chromosome_1 (object: chromosome): One of the child chromosomes
+        child_chromosome_2 (object: chromosome): One of the child chromosomes
+    '''
+
+    parent_matrix_1 = chromosome_1.initial_capacity_matrix
+    parent_matrix_2 = chromosome_2.initial_capacity_matrix
+    node_number = parent_matrix_1.shape[1]
+
+    child_matrix_1 = np.zeros([3, node_number], dtype=int)
+    child_matrix_2 = np.zeros([3, node_number], dtype=int)
+
+    for i in range(node_number):
+        head_or_tail = random.choice([0,1])
+        if head_or_tail == 0:
+            child_matrix_1[:, i] = parent_matrix_1[:, i]
+            child_matrix_2[:, i] = parent_matrix_2[:, i]
+        else:
+            child_matrix_1[:, i] = parent_matrix_2[:, i]
+            child_matrix_2[:, i] = parent_matrix_1[:, i]
+
+    test_data = chromosome_1.test_data
+    child_chromosome_1 = chromosome(child_matrix_1, test_data)
+    child_chromosome_2 = chromosome(child_matrix_2, test_data)
+
+    return child_chromosome_1, child_chromosome_2
