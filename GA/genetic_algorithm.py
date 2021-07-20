@@ -110,3 +110,72 @@ def uniform_col_crossover(chromosome_1, chromosome_2):
     child_chromosome_2 = chromosome(child_matrix_2, test_data)
 
     return child_chromosome_1, child_chromosome_2
+
+
+def one_pt_row_crossover(chromosome_1, chromosome_2):
+    '''
+    One-point crossover(row): Choose a random point on the two parents, split parents at this crossover point and create children by exchanging tails (rows).
+    If there are more than one positive numbers on one column, set the last non-zero number as the maximal number among them and set other numbers to zero.
+
+    Input:
+        chromosome_1 (object: chromosome): One of the parent chromosomes
+        chromosome_2 (object: chromosome): One of the parent chromosomes
+
+    Output:
+        child_chromosome_1 (object: chromosome): One of the child chromosomes
+        child_chromosome_2 (object: chromosome): One of the child chromosomes
+    '''
+
+    parent_matrix_1 = chromosome_1.initial_capacity_matrix
+    parent_matrix_2 = chromosome_2.initial_capacity_matrix
+    node_number = parent_matrix_1.shape[1]
+
+    child_matrix_1 = np.zeros([3, node_number], dtype=int)
+    child_matrix_2 = np.zeros([3, node_number], dtype=int)
+
+    # Randomly choose a crossover point
+    split_pt = random.choice(range(1, 3))
+
+    child_matrix_1[:split_pt, :] = parent_matrix_1[:split_pt, :]
+    child_matrix_1[split_pt:, :] = parent_matrix_2[split_pt:, :]
+    child_matrix_2[:split_pt, :] = parent_matrix_2[:split_pt, :]
+    child_matrix_2[split_pt:, :] = parent_matrix_1[split_pt:, :]
+
+    # Adjust child chromosome 1 if there are more than one positive numbers in one column
+    for i in range(node_number):
+        positive_values = []
+        for t in [2,1,0]:
+            if child_matrix_1[t, i] > 0:
+                positive_values.append((child_matrix_1[t, i], t))
+
+        if len(positive_values) > 1:
+            time = positive_values[0][1]
+            modules = max(positive_values)[0]
+            for j in positive_values:
+                if j[1] == time:
+                    child_matrix_1[time, i] = modules
+                else:
+                    child_matrix_1[j[1], i] = 0
+
+    # Adjust child chromosome 2 if there are more than one positive numbers in one column
+    for i in range(node_number):
+        positive_values = []
+        for t in [2,1,0]:
+            if child_matrix_2[t, i] > 0:
+                positive_values.append((child_matrix_1[t, i], t))
+
+        if len(positive_values) > 1:
+            time = positive_values[0][1]
+            modules = max(positive_values)[0]
+            for j in positive_values:
+                if j[1] == time:
+                    child_matrix_2[time, i] = modules
+                else:
+                    child_matrix_2[j[1], i] = 0
+
+
+    test_data = chromosome_1.test_data
+    child_chromosome_1 = chromosome(child_matrix_1, test_data)
+    child_chromosome_2 = chromosome(child_matrix_2, test_data)
+
+    return child_chromosome_1, child_chromosome_2
