@@ -179,3 +179,50 @@ def one_pt_row_crossover(chromosome_1, chromosome_2):
     child_chromosome_2 = chromosome(child_matrix_2, test_data)
 
     return child_chromosome_1, child_chromosome_2
+
+
+def mutation(input_chromosome):
+    '''
+    Randomly adjust an entry of the matrix of the input chromosome.
+
+    Input:
+        input_chromosome (object: chromosome): A chromosome chosen to be mutated
+
+    Output:
+        mutated_chromosome (object: chromosome): The chromosome after being mutated
+    '''
+
+    input_matrix = input_chromosome.initial_capacity_matrix
+    node_number = input_matrix.shape[1]
+    test_data = input_chromosome.test_data
+    hub_locations = test_data['hub_locations']
+    highest_originate = test_data['highest_originate']
+
+    feasible = False
+    while feasible == False:
+    # Generate a mutated matrix until it is feasible
+        mutated_matrix = input_matrix.copy()
+
+        # Randomly choose an entry to make change
+        rand_time = random.choice([0,1,2])
+        rand_hub = random.choice(hub_locations)
+
+        chosen_value = input_matrix[rand_time, rand_hub]
+        if chosen_value == 5:
+        # The value has reached its maximum so it should be reduced
+            rand_modules = random.choice(range(highest_originate[rand_time, rand_hub], 5))
+            mutated_matrix[rand_time, rand_hub] = rand_modules
+        elif chosen_value == highest_originate[rand_time, rand_hub]:
+        # The value has reached its minimum so it should be increased
+            rand_modules = random.choice(range(highest_originate[rand_time, rand_hub] + 1, 6))
+            mutated_matrix[rand_time, rand_hub] = rand_modules
+        else:
+        # The value is 0 or between its maximum and minimum
+            module_list = [x for x in range(highest_originate[rand_time, rand_hub], 6) if x != chosen_value]
+            rand_modules = random.choice(module_list)
+            mutated_matrix[rand_time, rand_hub] = rand_modules
+
+        mutated_chromosome = chromosome(mutated_matrix, test_data)
+        feasible = mutated_chromosome.is_feasible()
+
+    return mutated_chromosome
