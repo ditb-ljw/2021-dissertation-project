@@ -226,3 +226,21 @@ def mutation(input_chromosome):
         feasible = mutated_chromosome.is_feasible()
 
     return mutated_chromosome
+
+
+
+
+
+def new_generation(old_generation):
+
+    fitness_list = [c.fitness for c in old_generation]
+    cumulative_probability = calculate_cumulative_probability(fitness_list)
+
+    # Select parents
+    parent_index_1 = roulette_wheel(cumulative_probability)
+    parent_index_2 = roulette_wheel(cumulative_probability)
+    while parent_index_2 == parent_index_1:
+        parent_index_2 = roulette_wheel(cumulative_probability)
+
+    parent_chromosome_1 = old_generation[parent_index_1]
+    parent_chromosome_2 = old_generation[parent_index_2]
