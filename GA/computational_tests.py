@@ -1,7 +1,8 @@
 import numpy as np
 from GA.Chromosomes import chromosome
 from GA.data_processing import W, C, CAB_data_processing
-from GA.local_search import rand_chromosome_matrix, generate_initial_chromosome, find_neighbourhood, local_optimum
+from GA.local_search import rand_chromosome_matrix, rand_neighbourhood, generate_initial_chromosome, find_neighbourhood, local_optimum
+from GA.genetic_algorithm import one_pt_col_crossover, uniform_col_crossover, one_pt_row_crossover, mutation, new_generation, GA
 
 N_P = [15, 10]
 gamma_alpha = [0.075, 0.2]
@@ -21,11 +22,12 @@ neighbourhood_matrix = rand_neighbourhood(initial_capacity_matrix, hub_locations
 test_a = chromosome(initial_capacity_matrix, test_data)
 print(test_a.is_feasible())
 test_a.calculate_fitness()
-test_a.fitness
+print(test_a.fitness)
 
 test_b = chromosome(neighbourhood_matrix, test_data)
 print(test_b.is_feasible())
-print(test_b.fitness())
+test_b.calculate_fitness()
+print(test_b.fitness)
 
 
 
@@ -35,6 +37,13 @@ initial_capacity_matrix = initial_chromosome.initial_capacity_matrix
 print(initial_capacity_matrix)
 print(initial_chromosome.fitness)
 # a = find_neighbourhood(initial_chromosome_list[0], 10)
-b = local_optimum(initial_chromosome, 30, 30)
+b = local_optimum(initial_chromosome, 5, 10)
 print(b.initial_capacity_matrix)
 print(b.fitness)
+
+
+
+initial_chromosome_list = generate_initial_chromosome(100, test_data)
+b = [local_optimum(initial_chromosome, 5, 10) for initial_chromosome in initial_chromosome_list]
+res = GA(b, 100, 5, 0.4, 0.3, 0.1, 0.001)
+res.fitness
