@@ -162,7 +162,7 @@ def one_pt_row_crossover(chromosome_1, chromosome_2):
         positive_values = []
         for t in [2,1,0]:
             if child_matrix_2[t, i] > 0:
-                positive_values.append((child_matrix_1[t, i], t))
+                positive_values.append((child_matrix_2[t, i], t))
 
         if len(positive_values) > 1:
             time = positive_values[0][1]
@@ -228,16 +228,15 @@ def mutation(input_chromosome):
     return mutated_chromosome
 
 
-
-
-
-def new_generation(old_generation, crossover_probability, mutation_probability):
+def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability):
     '''
     Generate new generation by crossover and mutation based on old generation.
 
     Input:
         old_generation (list): List of chromosomes of old generation(sorted by their fitness value in decending order)
-        crossover_probability (float): Probability of crossover
+        one_pt_col_crossover_probability (float): Probability of 1-point crossover(column)
+        uniform_col_crossover_probability (float): Probability of uniform crossover(column)
+        one_pt_row_crossover_probability (float): Probability of 1-point crossover(row)
         mutation_probability (float): Probability of mutation
 
     Output:
@@ -264,8 +263,15 @@ def new_generation(old_generation, crossover_probability, mutation_probability):
 
         # Crossover
         rand_num = random.uniform(0, 1)
-        if rand_num <= crossover_probability:
+        if rand_num <= one_pt_col_crossover_probability:
+            # 1-point crossover(column)
             child_chromosome_1, child_chromosome_2 = one_pt_col_crossover(parent_chromosome_1, parent_chromosome_2)
+        elif rand_num <= one_pt_col_crossover_probability + uniform_col_crossover_probability:
+            # Uniform crossover(column)
+            child_chromosome_1, child_chromosome_2 = uniform_col_crossover(parent_chromosome_1, parent_chromosome_2)
+        elif rand_num <= one_pt_col_crossover_probability + uniform_col_crossover_probability + one_pt_row_crossover_probability:
+            # 1-point crossover(row)
+            child_chromosome_1, child_chromosome_2 = one_pt_row_crossover(parent_chromosome_1, parent_chromosome_2)
         else:
             child_chromosome_1, child_chromosome_2 = parent_chromosome_1, parent_chromosome_2
         # Check
@@ -309,3 +315,48 @@ def new_generation(old_generation, crossover_probability, mutation_probability):
     new_generation = [pair[1] for pair in sorted_pairs[:population_number]]
 
     return new_generation
+
+
+def GA(initial_population, num_generation, num_unchange, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability):
+    '''
+    Genetic algorithm.
+
+    Input:
+        initial_population (list): List of chromosomes of initial generation(unsorted)
+        num_generation (int): Total number of generations
+        num_unchange (int): Successive max number of generations where the best fitness value keeps (almost) unchanged
+        one_pt_col_crossover_probability (float): Probability of 1-point crossover(column)
+        uniform_col_crossover_probability (float): Probability of uniform crossover(column)
+        one_pt_row_crossover_probability (float): Probability of 1-point crossover(row)
+        mutation_probability (float): Probability of mutation
+
+    Output:
+        new_generation_list[0] (object: chromosome): The chromosome with best fitness value
+    '''
+
+    old_generation_list = initial_population
+    # Sort in decending order
+    old_generation_fitness = [c.fitness for c in old_generation_list]
+    zipped_lists = zip(old_generation_fitness, old_generation_list)
+    sorted_pairs = sorted(zipped_lists, reverse = True)
+
+    old_generation = [pair[1] for pair in sorted_pairs]
+    print(old_generation[0].fitness)
+
+    last_best_fitness = 0
+    unchange = 0
+    for g in range(num_generation):
+        new_generation_list = new_generation(old_generation, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability)
+        best_fitness = new_generation_list[0].fitness
+        if abs(best_fitness - last_best_fitness) < 1e-5:
+            unchange += 1
+        else:
+            unchange = 0
+
+        if unchange == num_unchange:
+            return new_generation_list[0]
+
+        last_best_fitness = best_fitness
+        old_generation = new_generation_list
+
+    return new_generation_list[0]
