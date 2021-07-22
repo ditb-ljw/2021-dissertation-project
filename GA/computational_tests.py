@@ -44,6 +44,10 @@ print(b.fitness)
 
 
 initial_chromosome_list = generate_initial_chromosome(100, test_data)
-b = [local_optimum(initial_chromosome, 5, 10) for initial_chromosome in initial_chromosome_list]
-res = GA(b, 100, 5, 0.4, 0.3, 0.1, 0.001)
+b = [local_optimum(initial_chromosome, 10, 10) for initial_chromosome in initial_chromosome_list]
+res = GA(b, 100, 10, 0.4, 0.3, 0.1, 0.001)
+res.fitness
+
+initial_chromosome_list = generate_initial_chromosome(100, test_data)
+res = GA(initial_chromosome_list, 100, 10, 0.4, 0.3, 0.1, 0.001)
 res.fitness
