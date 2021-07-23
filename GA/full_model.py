@@ -16,6 +16,8 @@ P = list(range(10))
 T = [0, 1, 2]
 # set of scenarios
 S = list(range(5))
+# probability for each scenario
+prob = {s: 0.2 for s in S}
 # capacity of a module
 gamma = 0.075
 # transfer cost in period t
@@ -141,3 +143,15 @@ M_DE.add_constraints((sum(v[(s, t, i, l, j)] for i in N) <= D[s][t, j]*sum(u[(ta
 M_DE.add_constraints((v[(s, t, i, l, j)] <= D[s][t, j]*(1 - sum(u[(tau, j)] for tau in range(t+1))) \
                       for s in S for t in T for i in N for l in P for j in P if j != l), \
                       names = '(52)')
+
+
+# Objective function (42)
+obj_f = sum((f[t, k]*u[(t, k)] + sum(g[t][k, q]*z[(t, k, q)] for q in range(1, Q[k]+1))) for k in P for t in T) + \
+        sum(prob[s]*(sum(X[t]*d[i, k]*x[(s, t, i, k)] for i in N for k in P for t in T) + \
+        sum(alpha[t]*d[k, l]*y[(s, t, i, k, l)] for i in N for k in P for l in P for t in T) + \
+        sum(delta[t]*d[l, j]*v[(s, t, i, l, j)] for i in N for l in P for j in N for t in T) + \
+        sum(h[t][k, q]*r[(s, t, k, q)] for k in P for q in range(1, Q[k]) for t in [1, 2])) for s in S)
+M_DE.set_objective('min', obj_f)
+
+
+# M_DE.print_information()
