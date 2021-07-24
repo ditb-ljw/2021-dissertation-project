@@ -70,14 +70,25 @@ M_DE = Model('Hub_location_problem')
 # Decision variables
 
 # if a hub is installed at k in period t: u_t_k = 1
+#idx_u = [(t, k) for t in T for k in P]
+#u = M_DE.binary_var_dict(idx_u, name = 'u')
+# if hub k receives q modules in period t: z_t_k_q = 1
+#idx_z = [(t, k, q) for t in T for k in P for q in range(1, Q[k]+1)]
+#z = M_DE.binary_var_dict(idx_z, name = 'z')
+# if hub k receives q additional modules in period t and scenario s: r_s_t_k_q = 1
+#idx_r = [(s, t, k, q) for s in S for t in [1,2] for k in P for q in range(1, Q[k])]
+#r = M_DE.binary_var_dict(idx_r, name = 'r')
+
+# relaxation
+# if a hub is installed at k in period t: u_t_k = 1
 idx_u = [(t, k) for t in T for k in P]
-u = M_DE.binary_var_dict(idx_u, name = 'u')
+u = M_DE.continuous_var_dict(idx_u, lb=0, ub = 1, name = 'u')
 # if hub k receives q modules in period t: z_t_k_q = 1
 idx_z = [(t, k, q) for t in T for k in P for q in range(1, Q[k]+1)]
-z = M_DE.binary_var_dict(idx_z, name = 'z')
+z = M_DE.continuous_var_dict(idx_z, lb=0, ub = 1, name = 'z')
 # if hub k receives q additional modules in period t and scenario s: r_s_t_k_q = 1
 idx_r = [(s, t, k, q) for s in S for t in [1,2] for k in P for q in range(1, Q[k])]
-r = M_DE.binary_var_dict(idx_r, name = 'r')
+r = M_DE.continuous_var_dict(idx_r, lb=0, ub = 1, name = 'r')
 
 # amount of flow with origin at i that is collected at hub k in period t and scenario s: x_s_t_i_k
 idx_x = [(s, t, i, k) for s in S for t in T for i in N for k in P]
@@ -171,7 +182,7 @@ M_DE.add_constraints((sum(np.ceil(q/l)*z[(t, k, q)] for q in range(1, Q[k]+1)) +
 M_DE.add_constraints((sum(np.ceil(q/l)*z[(tau, k, q)] for k in P for q in range(1, Q[k]+1) for tau in range(t+1)) + \
                       sum(np.ceil(q/l)*r[(s, tau, k, q)] for k in P for q in range(1, Q[k]) for tau in range(1, t+1)) >= \
                       np.ceil(np.ceil(np.sum(w[s][t])/gamma)/l) \
-                      for t in T for s in S for l in range(1, Q[k]+1)), \
+                      for t in T for s in S for l in range(1, 5+1)), \
                       names = '(40)')
 # (41)
 M_DE.add_constraints((x[(s, t, i, k)] <= O[s][t, i]*sum(u[(tau, k)] for tau in range(t+1)) \
