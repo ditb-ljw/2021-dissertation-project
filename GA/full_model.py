@@ -115,11 +115,13 @@ M_DE.add_constraints((sum(r[(s, t, k, q)] for q in range(1, Q[k])) <= sum(u[(tau
                       names = '(45)')
 # Inequalities (46) assure that, for each hub, in each time period and scenario, the incoming flow from non-hubs as well as the flow originated at the hub cannot exceed the hub’s capacity.
 M_DE.add_constraints((sum(x[(s, t, i, k)] for i in N) <= \
-                      gamma*sum(q*z[(tau, k, q)] for q in range(1, Q[k]+1) for tau in range(t+1)) + gamma*sum(q*r[(s, tau, k, q)] for q in range(1, Q[k]) for tau in range(1, t+1)) \
+                      gamma*sum(q*z[(tau, k, q)] for q in range(1, Q[k]+1) for tau in range(t+1)) + \
+                      gamma*sum(q*r[(s, tau, k, q)] for q in range(1, Q[k]) for tau in range(1, t+1)) \
                       for k in P for t in T for s in S), \
                       names = '(46)')
 # In each potential location for the hubs there is a maximum number of modules that can be installed as constraints (47) indicate.
-M_DE.add_constraints((sum(q*z[(t, k, q)] for t in T for q in range(1, Q[k]+1)) + sum(q*r[(s, t, k, q)] for t in [1,2] for q in range(1, Q[k])) <= Q[k] \
+M_DE.add_constraints((sum(q*z[(t, k, q)] for t in T for q in range(1, Q[k]+1)) + \
+                      sum(q*r[(s, t, k, q)] for t in [1,2] for q in range(1, Q[k])) <= Q[k] \
                       for k in P for s in S), \
                       names = '(47)')
 # The flow conservation and divergence constraints are described by (48).
@@ -146,20 +148,20 @@ M_DE.add_constraints((v[(s, t, i, l, j)] <= D[s][t, j]*(1 - sum(u[(tau, j)] for 
 
 # valid inequalities
 # (36) (enhanced (47))
-M_DE.add_constraints((sum(q*z[(t, k, q)] for t in T for q in range(1, Q[k]+1)) + sum(q*r[(s, t, k, q)] for t in [1,2] for q in range(1, Q[k])) <= \
-                      Q[k]*sum(u[(t, k)] for t in T) \
-                      for k in P for s in S), \
-                      names = '(36)')
+#M_DE.add_constraints((sum(q*z[(t, k, q)] for t in T for q in range(1, Q[k]+1)) + sum(q*r[(s, t, k, q)] for t in [1,2] for q in range(1, Q[k])) <= \
+#                      Q[k]*sum(u[(t, k)] for t in T) \
+#                      for k in P for s in S), \
+#                      names = '(36)')
 # (37) (enhanced (36))
 M_DE.add_constraints((sum(np.floor(q/l)*z[(t, k, q)] for t in T for q in range(1, Q[k]+1)) + sum(np.floor(q/l)*r[(s, t, k, q)] for t in [1,2] for q in range(1, Q[k])) <= \
                       np.floor(Q[k]/l)*sum(u[(t, k)] for t in T) \
                       for k in P for s in S for l in range(1, Q[k]+1)), \
                       names = '(37)')
 # (38)
-M_DE.add_constraints((sum(q*z[(t, k, q)] for q in range(1, Q[k]+1)) + sum(q*r[(s, tau, k, q)] for tau in range(t+1, len(T)) for q in range(1, Q[k])) >= \
-                      np.ceil(max(O[s][t_au, k] for t_au in range(t, len(T)))/gamma)*u[(t, k)] \
-                      for k in P for t in T for s in S), \
-                      names = '(38)')
+#M_DE.add_constraints((sum(q*z[(t, k, q)] for q in range(1, Q[k]+1)) + sum(q*r[(s, tau, k, q)] for tau in range(t+1, len(T)) for q in range(1, Q[k])) >= \
+#                      np.ceil(max(O[s][t_au, k] for t_au in range(t, len(T)))/gamma)*u[(t, k)] \
+#                      for k in P for t in T for s in S), \
+#                      names = '(38)')
 # (39) (enhanced(38))
 M_DE.add_constraints((sum(np.ceil(q/l)*z[(t, k, q)] for q in range(1, Q[k]+1)) + sum(np.ceil(q/l)*r[(s, tau, k, q)] for tau in range(t+1, len(T)) for q in range(1, Q[k])) >= \
                       np.ceil(np.ceil(max(O[s][t_au, k] for t_au in range(t, len(T)))/gamma)/l)*u[(t, k)] \
@@ -187,3 +189,8 @@ M_DE.set_objective('min', obj_f)
 
 
 # M_DE.print_information()
+
+
+# Solution
+M_DE.solve()
+M_DE.print_solution()
