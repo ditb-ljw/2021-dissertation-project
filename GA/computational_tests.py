@@ -4,9 +4,9 @@ from GA.data_processing import W, C, CAB_data_processing
 from GA.local_search import rand_chromosome_matrix, rand_neighbourhood, generate_initial_chromosome, find_neighbourhood, local_optimum
 from GA.genetic_algorithm import one_pt_col_crossover, uniform_col_crossover, one_pt_row_crossover, mutation, new_generation, GA
 
-N_P = [15, 10]
+N_P = [25, 25]
 gamma_alpha = [0.075, 0.2]
-hub_locations = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+hub_locations = list(range(25))
 
 distance, coefficients, demand_dict, highest_originate, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict = CAB_data_processing(W, C, N_P, gamma_alpha)
 test_data = {'distance': distance, 'hub_locations': hub_locations, 'coefficients': coefficients, 'demand_dict': demand_dict, \
@@ -46,8 +46,8 @@ print(b.fitness)
 initial_chromosome_list = generate_initial_chromosome(100, test_data)
 b = [local_optimum(initial_chromosome, 10, 10) for initial_chromosome in initial_chromosome_list]
 res = GA(b, 100, 10, 0.4, 0.3, 0.1, 0.001)
-res.fitness
+1e3/res.fitness
 
-initial_chromosome_list = generate_initial_chromosome(100, test_data)
+#initial_chromosome_list = generate_initial_chromosome(100, test_data)
 res = GA(initial_chromosome_list, 100, 10, 0.4, 0.3, 0.1, 0.001)
-res.fitness
+1e3/res.fitness
