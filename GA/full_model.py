@@ -165,7 +165,7 @@ M_DE.add_constraints((sum(np.floor(q/l)*z[(t, k, q)] for t in T for q in range(1
 # (39) (enhanced(38))
 M_DE.add_constraints((sum(np.ceil(q/l)*z[(t, k, q)] for q in range(1, Q[k]+1)) + sum(np.ceil(q/l)*r[(s, tau, k, q)] for tau in range(t+1, len(T)) for q in range(1, Q[k])) >= \
                       np.ceil(np.ceil(max(O[s][t_au, k] for t_au in range(t, len(T)))/gamma)/l)*u[(t, k)] \
-                      for k in P for t in T for s in S for l in range(1, np.ceil(max(O[s][t_au, k] for t_au in range(t, len(T)))/gamma) + 1)), \
+                      for k in P for t in T for s in S for l in range(1, int(np.ceil(max(O[s][t_au, k] for t_au in range(t, len(T)))/gamma) + 1))), \
                       names = '(39)')
 # (40)
 M_DE.add_constraints((sum(np.ceil(q/l)*z[(tau, k, q)] for k in P for q in range(1, Q[k]+1) for tau in range(t+1)) + \
@@ -188,7 +188,7 @@ obj_f = sum((f[t, k]*u[(t, k)] + sum(g[t][k, q]*z[(t, k, q)] for q in range(1, Q
 M_DE.set_objective('min', obj_f)
 
 
-# M_DE.print_information()
+M_DE.print_information()
 
 
 # Solution
