@@ -132,6 +132,141 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
     return flow, exceed
 
 
+def reroute_reduce_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_now, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients):
+    '''
+    Reroute exceeded flows (randomly chosen) to hubs that have not yet reached their current capacity,
+    then expand hubs so the capacity of each hub does not exceed the limit.
+
+    Input:
+        hubs (list): Indices of hub nodes
+        non_hubs (list): Indices of non_hub nodes
+        demand (ndarray): A matrix containing demand from each node to another node
+        first_hub (ndarray): Collection hub for each flow(via shortest paths)
+        second_hub (ndarray): Distribution hub for each flow(via shortest paths)
+        capacity_now (list): Capacity that each hub has already installed until now
+        max_hub_capacity (list): Maximal capacity that can be installed in a hub (initial capacity for a new hub)
+        hub_node_cost (ndarray): The minimal distance from each hub to each node
+        hub_node (ndarray): The distribution hub on the shortest path from each hub to each node
+        distance (ndarray): A matrix containing distance from each node to another node
+        coefficients (list, length 3): Collection cost, transfer cost and distribution cost
+
+    Output:
+        flow (dictionary: {collection hub: [[(origin, collection hub, distribution hub, destination), amount of flow], ... ]}):
+            Flow via each collection hub. Including indices for all nodes on the route and amount of flow.
+        exceed (list): Amount of flow that exceed the maximal capacity for each hub (negative if below the maximal capacity)
+    '''
+
+    X = coefficients[0]
+    alpha = coefficients[1]
+    delta = coefficients[2]
+
+    # All nodes
+    node_number = len(hubs) + len(non_hubs)
+    hub_flow = np.zeros(node_number)
+    flow = {i:[] for i in hubs}
+
+    # Calculate the total amount of flow via each collection hub, record the route and amount of flow via each collection hub
+    for i in range(node_number):
+        for j in range(node_number):
+            hub_flow[int(first_hub[i,j])] += demand[i,j]
+            if demand[i,j] > 0:
+                route = (i,int(first_hub[i,j]),int(second_hub[i,j]),j)
+                flow[int(first_hub[i,j])].append([route, demand[i,j]])
+
+    # Calculate the amount of flow that exceed the current capacity for each hub
+    # Get the list of hubs that have not yet reached their capacity and the list of hubs that have reached their capacity
+    available_hubs = hubs.copy()
+    full_hubs = []
+    exceed = np.zeros(node_number)
+    for k in hubs:
+        exceed[k] = hub_flow[k] - capacity_now[k]
+        if exceed[k] >= 0:
+            full_hubs.append(k)
+            available_hubs.remove(k)
+
+    # For each hubs that have reached their current capacity, arbitrarily reroute an excess flow(except the flow originated at the hub)
+    # via its cheapest alternative hub that have not yet reached the current capacity, until all hubs are full
+    for k in full_hubs:
+        flow_to_hub = flow[k]
+        flow_origin = {i:[] for i in range(node_number)}
+        for f in flow_to_hub:
+            origin_node = f[0][0]
+            flow_origin[origin_node].append(f)
+
+        while available_hubs != [] and exceed[k] > 0:
+            origin_node_list = [o for o in range(node_number) if o != k and flow_origin[o] != []]
+            if origin_node_list == []:
+                break
+            reroute_origin = random.choice(origin_node_list)
+            reroute_flow_i = random.choice(range(len(flow_origin[reroute_origin])))
+            reroute_flow = flow_origin[reroute_origin][reroute_flow_i]
+
+            destination = reroute_flow[0][3]
+            reroute_cost_hub = min((X*distance[reroute_origin,k] + hub_node_cost[hubs.index(k),destination], k) for k in available_hubs)
+            new_route = (reroute_origin, reroute_cost_hub[1], int(hub_node[hubs.index(reroute_cost_hub[1]), destination]), destination)
+            reroute_flow_value = min(reroute_flow[1], exceed[k], -exceed[reroute_cost_hub[1]])
+            if reroute_flow_value == reroute_flow[1]:
+                flow_origin[reroute_origin].pop(reroute_flow_i)
+                flow[k].remove(reroute_flow)
+            else:
+                reroute_flow[1] -= reroute_flow_value
+            flow[reroute_cost_hub[1]].append([new_route, reroute_flow_value])
+#            flow_origin[reroute_origin].append([new_route, reroute_flow_value])
+            exceed[k] -= reroute_flow_value
+            exceed[reroute_cost_hub[1]] += reroute_flow_value
+            hub_flow[k] -= reroute_flow_value
+            hub_flow[reroute_cost_hub[1]] += reroute_flow_value
+            if exceed[reroute_cost_hub[1]] >= 0:
+                full_hubs.append(reroute_cost_hub[1])
+                available_hubs.remove(reroute_cost_hub[1])
+    # There is no need to add modules if current capacity is enough
+    if all([i <= 0 for i in exceed]):
+        exceed_limit = capacity_now + exceed - max_hub_capacity
+        return flow, exceed_limit
+
+    # Expand hubs if current capacity is not enough
+
+    # Calculate the amount of flow that exceed the maximal capacity for each hub
+    # Get the list of hubs that have not yet reached their max capacity and the list of hubs that have reached their capacity
+    available_hubs = hubs.copy()
+    full_hubs = []
+    exceed = np.zeros(node_number)
+    for k in hubs:
+        exceed[k] = hub_flow[k] - max_hub_capacity[k]
+        if exceed[k] >= 0:
+            full_hubs.append(k)
+            available_hubs.remove(k)
+
+    # For each hubs that have reached their max capacity, arbitrarily reroute an excess flow(except the flow originated at the hub)
+    # via its cheapest alternative hub that have not yet reached the maximal capacity, until the exceed amount of flow is 0
+    for k in full_hubs:
+        while exceed[k] > 0:
+            # Infeasible
+            if available_hubs == []:
+                return 0
+            reroute_flow_i = random.choice(range(len(flow[k])))
+            reroute_flow = flow[k][reroute_flow_i]
+            origin = reroute_flow[0][0]
+            if origin == k:
+                continue
+            destination = reroute_flow[0][3]
+            reroute_cost_hub = min((X*distance[origin,k] + hub_node_cost[hubs.index(k),destination], k) for k in available_hubs)
+            new_route = (origin,reroute_cost_hub[1],int(hub_node[hubs.index(reroute_cost_hub[1]), destination]),destination)
+            reroute_flow_value = min(reroute_flow[1], exceed[k], -exceed[reroute_cost_hub[1]])
+            if reroute_flow_value == reroute_flow[1]:
+                flow[k].pop(reroute_flow_i)
+            else:
+                reroute_flow[1] -= reroute_flow_value
+            flow[reroute_cost_hub[1]].append([new_route, reroute_flow_value])
+            exceed[k] -= reroute_flow_value
+            exceed[reroute_cost_hub[1]] += reroute_flow_value
+            if exceed[reroute_cost_hub[1]] >= 0:
+                full_hubs.append(reroute_cost_hub[1])
+                available_hubs.remove(reroute_cost_hub[1])
+
+    return flow, exceed
+
+
 def flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients):
     '''
     Calculate the total cost for collecting, transferring, and distributing the traffic.
@@ -266,9 +401,12 @@ class chromosome():
         self.capacity_expansion = {}
 
 
-    def calculate_fitness(self):
+    def calculate_fitness(self, prefer_expand):
         '''
         Calculate the fitness value(1/objective value) and get the corresponding flow routing and additional modules for a chromosome
+
+        Input:
+            prefer_expand (boolean): True: Tend to add modules to hubs. False: Tend to reroute flows to hubs that have not yet reached their capacity.
 
         Data:
             initial_capacity_matrix (ndarray): Initial capacity(module) of each hub in each period
@@ -334,16 +472,19 @@ class chromosome():
                     max_hub_capacity[new_hubs[k]] = initial_capacity[new_hubs[k]]
 
                 hub_node_cost, hub_node, first_hub, second_hub = shortest_paths_allocation(hubs, non_hubs, distance, coefficients)
+                for j in new_hubs:
+                    capacity_now[j] += initial_capacity[j]
                 try:
-                    flow, exceed = reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients)
+                    if prefer_expand == True:
+                        flow, exceed = reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients)
+                    else:
+                        flow, exceed = reroute_reduce_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_now, max_hub_capacity, hub_node_cost, hub_node, distance, coefficients)
                     flow_routing[s].append(flow)
                 # Infeasible
                 except TypeError:
                     return None
                 cost_flow = flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients)
 
-                for j in new_hubs:
-                    capacity_now[j] += initial_capacity[j]
                 add_capacity = np.ceil(np.array(additional_capacity(capacity_now, max_hub_capacity, exceed))/module_capacity)
                 capacity_expansion[s][t,:] = add_capacity
 
