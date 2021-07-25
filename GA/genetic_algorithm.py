@@ -228,7 +228,7 @@ def mutation(input_chromosome):
     return mutated_chromosome
 
 
-def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability):
+def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability, prefer_expand):
     '''
     Generate new generation by crossover and mutation based on old generation.
 
@@ -238,6 +238,7 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
         uniform_col_crossover_probability (float): Probability of uniform crossover(column)
         one_pt_row_crossover_probability (float): Probability of 1-point crossover(row)
         mutation_probability (float): Probability of mutation
+        prefer_expand (boolean): True: Tend to add modules to hubs. False: Tend to reroute flows to hubs that have not yet reached their capacity
 
     Output:
         new_generation (list): List of chromosomes of new generation(sorted by their fitness value in decending order)
@@ -289,7 +290,7 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
                 if rand_num <= mutation_probability:
                     child_chromosome = mutation(child_chromosome)
 
-                child_chromosome.calculate_fitness()
+                child_chromosome.calculate_fitness(prefer_expand)
                 new_generation_list.append(child_chromosome)
                 new_generation_fitness.append(child_chromosome.fitness)
                 new_generation_matrices.append(child_chromosome.initial_capacity_matrix)
@@ -317,7 +318,7 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
     return new_generation
 
 
-def GA(initial_population, num_generation, num_unchange, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability):
+def GA(initial_population, num_generation, num_unchange, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability, prefer_expand):
     '''
     Genetic algorithm.
 
@@ -329,6 +330,7 @@ def GA(initial_population, num_generation, num_unchange, one_pt_col_crossover_pr
         uniform_col_crossover_probability (float): Probability of uniform crossover(column)
         one_pt_row_crossover_probability (float): Probability of 1-point crossover(row)
         mutation_probability (float): Probability of mutation
+        prefer_expand (boolean): True: Tend to add modules to hubs. False: Tend to reroute flows to hubs that have not yet reached their capacity
 
     Output:
         new_generation_list[0] (object: chromosome): The chromosome with best fitness value
@@ -346,7 +348,7 @@ def GA(initial_population, num_generation, num_unchange, one_pt_col_crossover_pr
     last_best_fitness = 0
     unchange = 0
     for g in range(num_generation):
-        new_generation_list = new_generation(old_generation, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability)
+        new_generation_list = new_generation(old_generation, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability, prefer_expand)
         best_fitness = new_generation_list[0].fitness
         if abs(best_fitness - last_best_fitness) < 1e-5:
             unchange += 1

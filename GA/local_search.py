@@ -297,7 +297,7 @@ def rand_neighbourhood(chromosome_matrix, hub_locations, highest_originate):
                 rand_entry.append((rand_time, rand_hub))
 
 
-def generate_initial_chromosome(pop_size, test_data):
+def generate_initial_chromosome(pop_size, test_data, prefer_expand):
     '''
     Randomly generate feasible initial population.
 
@@ -306,6 +306,7 @@ def generate_initial_chromosome(pop_size, test_data):
         test_data (dictionary): {'distance': ndarray, 'hub_locations': list, 'coefficients': list, 'demand_dict': dictionary,
                                 'highest_originate': ndarray, 'module_capacity': float, 'install_hub_cost_matrix': ndarray,
                                 'initial_capacity_cost_dict': dictionary, 'additional_capacity_cost_dict': dictionary}
+        prefer_expand (boolean): True: Tend to add modules to hubs. False: Tend to reroute flows to hubs that have not yet reached their capacity
 
     Output:
         initial_chromosome_list (list, length:pop_size): List of initial population
@@ -337,14 +338,14 @@ def generate_initial_chromosome(pop_size, test_data):
             initial_chromosome = chromosome(initial_capacity_matrix, test_data)
             feasiblity = initial_chromosome.is_feasible()
 
-        initial_chromosome.calculate_fitness()
+        initial_chromosome.calculate_fitness(prefer_expand)
         initial_chromosome_list.append(initial_chromosome)
         initial_matrix_list.append(initial_capacity_matrix)
 
     return initial_chromosome_list
 
 
-def find_neighbourhood(input_chromosome, iter_times):
+def find_neighbourhood(input_chromosome, iter_times, prefer_expand):
     '''
     Find a chromosome with higher fitness value in the neighbourhood of the input chromosome within limited iteration times.
     If cannot find such chromosome, consider the input_chromosome as the local optimum.
@@ -352,6 +353,7 @@ def find_neighbourhood(input_chromosome, iter_times):
     Input:
         input_chromosome (object: chromosome): A chromosome
         iter_times (int): Iteration times
+        prefer_expand (boolean): True: Tend to add modules to hubs. False: Tend to reroute flows to hubs that have not yet reached their capacity
 
     Output:
         neighbourhood_chromosome (object: chromosome): A chromosome with higher fitness value in the neighbourhood of the input chromosome
@@ -385,7 +387,7 @@ def find_neighbourhood(input_chromosome, iter_times):
             feasiblity = neighbourhood_chromosome.is_feasible()
 
         neighbourhood_matrix_list.append(neighbourhood_matrix)
-        neighbourhood_chromosome.calculate_fitness()
+        neighbourhood_chromosome.calculate_fitness(prefer_expand)
         neighbourhood_matrix_fitness = neighbourhood_chromosome.fitness
 
         if neighbourhood_matrix_fitness > input_fitness:
@@ -394,7 +396,7 @@ def find_neighbourhood(input_chromosome, iter_times):
     return input_chromosome
 
 
-def local_optimum(input_chromosome, move_times, neighbourhood_numbers):
+def local_optimum(input_chromosome, move_times, neighbourhood_numbers, prefer_expand):
     '''
     Within limited move times, find a local optimum by keeping searching and moving to a neighbourhood chromosome
     with higher fitness value.
@@ -403,6 +405,7 @@ def local_optimum(input_chromosome, move_times, neighbourhood_numbers):
         input_chromosome (object: chromosome): A chromosome
         move_times (int): Maximal move times
         neighbourhood_numbers (int): Maximal number of neighbourhood chromosomes which can be searched for one with higher fitness
+        prefer_expand (boolean): True: Tend to add modules to hubs. False: Tend to reroute flows to hubs that have not yet reached their capacity
 
     Output:
         improved_chromosome (object: chromosome): A local optimum or improved chromosome with higher fitness value than that of the input chromosome
@@ -413,7 +416,7 @@ def local_optimum(input_chromosome, move_times, neighbourhood_numbers):
 #    print('initial fitness')
 #    print(initial_fitness)
 
-    improved_chromosome = find_neighbourhood(input_chromosome, neighbourhood_numbers)
+    improved_chromosome = find_neighbourhood(input_chromosome, neighbourhood_numbers, prefer_expand)
     improved_fitness = improved_chromosome.fitness
 #    print('improved fitness')
 #    print(improved_fitness)
@@ -428,7 +431,7 @@ def local_optimum(input_chromosome, move_times, neighbourhood_numbers):
 #        print('initial fitness')
 #        print(initial_fitness)
 
-        improved_chromosome = find_neighbourhood(initial_chromosome, neighbourhood_numbers)
+        improved_chromosome = find_neighbourhood(initial_chromosome, neighbourhood_numbers, prefer_expand)
         improved_fitness = improved_chromosome.fitness
 #        print('improved fitness')
 #        print(improved_fitness)
