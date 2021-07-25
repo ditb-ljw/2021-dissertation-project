@@ -4,9 +4,9 @@ from GA.data_processing import W, C, CAB_data_processing
 from GA.local_search import rand_chromosome_matrix, rand_neighbourhood, generate_initial_chromosome, find_neighbourhood, local_optimum
 from GA.genetic_algorithm import one_pt_col_crossover, uniform_col_crossover, one_pt_row_crossover, mutation, new_generation, GA
 
-N_P = [25, 25]
+N_P = [15, 10]
 gamma_alpha = [0.075, 0.2]
-hub_locations = list(range(25))
+hub_locations = list(range(10))
 
 distance, coefficients, demand_dict, highest_originate, module_capacity, install_hub_cost_matrix, initial_capacity_cost_dict, additional_capacity_cost_dict = CAB_data_processing(W, C, N_P, gamma_alpha)
 test_data = {'distance': distance, 'hub_locations': hub_locations, 'coefficients': coefficients, 'demand_dict': demand_dict, \
@@ -21,8 +21,12 @@ neighbourhood_matrix = rand_neighbourhood(initial_capacity_matrix, hub_locations
 #initial_capacity_matrix = np.array([[5, 1, 1, 3, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 test_a = chromosome(initial_capacity_matrix, test_data)
 print(test_a.is_feasible())
-test_a.calculate_fitness()
+test_a.calculate_fitness(True)
 print(test_a.fitness)
+print(test_a.capacity_expansion)
+test_a.calculate_fitness(False)
+print(test_a.fitness)
+print(test_a.capacity_expansion)
 
 test_b = chromosome(neighbourhood_matrix, test_data)
 print(test_b.is_feasible())
@@ -43,11 +47,11 @@ print(b.fitness)
 
 
 
-initial_chromosome_list = generate_initial_chromosome(100, test_data)
-b = [local_optimum(initial_chromosome, 10, 10) for initial_chromosome in initial_chromosome_list]
-res = GA(b, 100, 10, 0.4, 0.3, 0.1, 0.001)
+initial_chromosome_list = generate_initial_chromosome(100, test_data, True)
+b = [local_optimum(initial_chromosome, 10, 10, True) for initial_chromosome in initial_chromosome_list]
+res = GA(b, 100, 10, 0.4, 0.3, 0.1, 0.001, True)
 1e3/res.fitness
 
 #initial_chromosome_list = generate_initial_chromosome(100, test_data)
-res = GA(initial_chromosome_list, 100, 10, 0.4, 0.3, 0.1, 0.001)
+res = GA(initial_chromosome_list, 100, 10, 0.4, 0.3, 0.1, 0.001, True)
 1e3/res.fitness
