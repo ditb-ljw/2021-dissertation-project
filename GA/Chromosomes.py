@@ -502,7 +502,7 @@ class chromosome():
             cost_scenario = probabilities[s]*cost_periods
             total_cost += cost_scenario
 
-        fitness_value = 1e3/total_cost
+        fitness_value = 1/total_cost
 
         self.fitness = fitness_value
         self.flow_routing = flow_routing
