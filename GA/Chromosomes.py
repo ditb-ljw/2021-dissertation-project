@@ -577,7 +577,9 @@ class chromosome():
         for t in range(self.initial_capacity_matrix.shape[0]):
             for k in hub_locations:
                 initial_capacity_k_t = self.initial_capacity_matrix[t, k]
-                if initial_capacity_k_t > 5 or initial_capacity_k_t < highest_originate[t, k]:
+                if initial_capacity_k_t == 0:
+                    continue
+                elif initial_capacity_k_t > 5 or initial_capacity_k_t < highest_originate[t, k]:
                     return False
 
         return True
