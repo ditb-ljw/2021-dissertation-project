@@ -30,7 +30,7 @@ print(test_a.capacity_expansion)
 
 test_b = chromosome(neighbourhood_matrix, test_data)
 print(test_b.is_feasible())
-test_b.calculate_fitness()
+test_b.calculate_fitness(False)
 print(test_b.fitness)
 
 
@@ -47,11 +47,12 @@ print(b.fitness)
 
 
 
-initial_chromosome_list = generate_initial_chromosome(100, test_data, True)
-b = [local_optimum(initial_chromosome, 10, 10, True) for initial_chromosome in initial_chromosome_list]
-res = GA(b, 100, 10, 0.4, 0.3, 0.1, 0.001, True)
-1e3/res.fitness
+initial_chromosome_list = generate_initial_chromosome(100, test_data, False)
+b = [local_optimum(initial_chromosome, 10, 10, False) for initial_chromosome in initial_chromosome_list]
+res = GA(b, 100, 10, 0.4, 0.3, 0.1, 0.001, False)
+1/res.fitness
 
 #initial_chromosome_list = generate_initial_chromosome(100, test_data)
-res = GA(initial_chromosome_list, 100, 10, 0.4, 0.3, 0.1, 0.001, True)
-1e3/res.fitness
+res = GA(initial_chromosome_list, 100, 10, 0.4, 0.3, 0.1, 0.001, False)
+res = local_optimum(res, 10, 10, False)
+1/res.fitness
