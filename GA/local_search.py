@@ -337,7 +337,6 @@ def generate_initial_chromosome(pop_size, test_data, prefer_expand):
 
             initial_chromosome = chromosome(initial_capacity_matrix, test_data)
             feasiblity = initial_chromosome.is_feasible()
-
         initial_chromosome.calculate_fitness(prefer_expand)
         initial_chromosome_list.append(initial_chromosome)
         initial_matrix_list.append(initial_capacity_matrix)

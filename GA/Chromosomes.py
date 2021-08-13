@@ -239,21 +239,25 @@ def reroute_min_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_n
         if c > 0 and c < outbound[i]:
             lower_originate.append((exceed[i], i))
     # Sort the amount of excess flow for the rest of the hubs in descending order
-    sorted_exceed = sorted([(exceed[i], i) for i in range(len(exceed)) if (i not in [j[1] for j in lower_originate]) and (exceed[i] > 0)], reverse = True)
+    sorted_exceed = sorted([(exceed[i], i) for i in range(len(exceed)) if (i not in [j[1] for j in lower_originate])], reverse = True)
     sorted_exceed = lower_originate + sorted_exceed
     expand_capacity_list = capacity_now.copy()
     rest_add_module = total_add_module
 
     # Expand hubs
-    for e, i in sorted_exceed:
-        if rest_add_module == 0:
-            break
-        max_expand = np.ceil(round((max_hub_capacity[i] - capacity_now[i]), 3)/module_capacity)
-        if max_expand > 0:
-            expand_module = min(np.ceil(e/module_capacity), max_expand)
-            expand_capacity = expand_module*module_capacity
-            expand_capacity_list[i] += expand_capacity
-            rest_add_module -= expand_module
+    while rest_add_module > 0:
+        for e, i in sorted_exceed:
+            if rest_add_module == 0:
+                break
+            max_expand = np.ceil(round((max_hub_capacity[i] - capacity_now[i]), 7)/module_capacity)
+            if max_expand > 0:
+                if e > 0:
+                    expand_module = min(np.ceil(e/module_capacity), max_expand)
+                else:
+                    expand_module = min(max_expand, rest_add_module)
+                expand_capacity = expand_module*module_capacity
+                expand_capacity_list[i] += expand_capacity
+                rest_add_module -= expand_module
 
     # Reroute after expand
     available_hubs = hubs.copy()
@@ -272,7 +276,7 @@ def reroute_min_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_n
             origin_node = f[0][0]
             flow_origin[origin_node].append(f)
 
-        while available_hubs != [] and exceed[k] > 0:
+        while exceed[k] > 0:
             origin_node_list = [o for o in range(node_number) if o != k and flow_origin[o] != []]
             if origin_node_list == []:
                 break
@@ -353,12 +357,11 @@ def additional_capacity(capacity_now, max_hub_capacity, exceed):
     add_capacity = []
     for i in range(len(exceed)):
         capacity = max_hub_capacity[i] + exceed[i]
-        additional = round((capacity - capacity_now[i]), 3)
+        additional = round((capacity - capacity_now[i]), 7)
         if additional > 0 and capacity_now[i] > 0:
             add_capacity.append(additional)
         else:
             add_capacity.append(0)
-
     return add_capacity
 
 
@@ -503,10 +506,13 @@ class chromosome():
                     return None
 
                 non_hubs = [i for i in range(self.initial_capacity_matrix.shape[1]) if i not in hubs]
-                max_hub_capacity = maximal_capacity.copy()
+                max_hub_capacity = np.zeros(self.initial_capacity_matrix.shape[1])
                 # The capacity limit for each new hub is its initial capacity because hubs cannot be built and expanded in the same time period
-                for k in range(len(new_hubs)):
-                    max_hub_capacity[new_hubs[k]] = initial_capacity[new_hubs[k]]
+                for k in hubs:
+                    if k in new_hubs:
+                        max_hub_capacity[k] = initial_capacity[k]
+                    else:
+                        max_hub_capacity[k] = maximal_capacity[k]
 
                 hub_node_cost, hub_node, first_hub, second_hub = shortest_paths_allocation(hubs, non_hubs, distance, coefficients)
                 for j in new_hubs:
