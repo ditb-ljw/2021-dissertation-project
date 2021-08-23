@@ -130,6 +130,8 @@ def reroute(hubs, non_hubs, demand, first_hub, second_hub, max_hub_capacity, hub
                 full_hubs.append(reroute_cost_hub[1])
                 available_hubs.remove(reroute_cost_hub[1])
 
+    exceed = [e if abs(e) > 1e-5 else 0 for e in exceed]
+
     return flow, exceed
 
 
@@ -181,7 +183,7 @@ def reroute_min_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_n
     full_hubs = []
     exceed = np.zeros(node_number)
     for k in hubs:
-        exceed[k] = hub_flow[k] - capacity_now[k]
+        exceed[k] = round((hub_flow[k] - capacity_now[k]), 10)
         if exceed[k] >= 0:
             full_hubs.append(k)
             available_hubs.remove(k)
@@ -222,11 +224,13 @@ def reroute_min_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_n
                 full_hubs.append(reroute_cost_hub[1])
                 available_hubs.remove(reroute_cost_hub[1])
 
+    exceed = [e if abs(e) > 1e-5 else 0 for e in exceed]
     # There is no need to add modules if current capacity is enough
     if all([i <= 0 for i in exceed]):
         exceed_limit = capacity_now + exceed - max_hub_capacity
         return flow, exceed_limit
 
+#    print('expand')
     # Expand hubs if current capacity is not enough
     # Calculate minimal number of modules needed to cover all the excess flow
     total_exceed = np.sum([e for e in exceed if e > 0])
@@ -239,32 +243,71 @@ def reroute_min_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_n
         if c > 0 and c < outbound[i]:
             lower_originate.append((exceed[i], i))
     # Sort the amount of excess flow for the rest of the hubs in descending order
-    sorted_exceed = sorted([(exceed[i], i) for i in range(len(exceed)) if (i not in [j[1] for j in lower_originate])], reverse = True)
+    sorted_exceed = sorted([(exceed[i], i) for i in range(len(exceed)) if (i not in [j[1] for j in lower_originate]) and (exceed[i] > 0)], reverse = True)
     sorted_exceed = lower_originate + sorted_exceed
+#    print(sorted_exceed)
     expand_capacity_list = capacity_now.copy()
     rest_add_module = total_add_module
 
+    exceed_left = []
+    available_hubs = hubs.copy()
+    full_hubs = []
     # Expand hubs
+    for e, i in sorted_exceed:
+#        print('rest')
+#        print(rest_add_module)
+        if rest_add_module == 0:
+            break
+        max_expand = np.ceil(round((max_hub_capacity[i] - capacity_now[i]), 5)/module_capacity)
+        if max_expand > 0:
+            expand_module = min(np.ceil(e/module_capacity), max_expand)
+#            print(i)
+#            print(expand_module)
+            expand_capacity = expand_module*module_capacity
+            expand_capacity_list[i] += expand_capacity
+            rest_add_module -= expand_module
+        else:
+            expand_capacity = 0
+
+        if round(e - expand_capacity, 5) > 0:
+            exceed_left.append((round(e - expand_capacity, 5),i))
+            full_hubs.append(i)
+            available_hubs.remove(i)
+
+#    print(full_hubs)
+#    print(available_hubs)
+    sorted_exceed_left = sorted(exceed_left, reverse = True)
+#    print(sorted_exceed_left)
     while rest_add_module > 0:
-        for e, i in sorted_exceed:
-            if rest_add_module == 0:
-                break
-            max_expand = np.ceil(round((max_hub_capacity[i] - capacity_now[i]), 7)/module_capacity)
-            if max_expand > 0:
-                if e > 0:
-                    expand_module = min(np.ceil(e/module_capacity), max_expand)
-                else:
-                    expand_module = min(max_expand, rest_add_module)
-                expand_capacity = expand_module*module_capacity
-                expand_capacity_list[i] += expand_capacity
-                rest_add_module -= expand_module
+#        print('rest')
+#        print(rest_add_module)
+        e, i = sorted_exceed_left[0]
+        expand_hub = min((distance[i,k], k) for k in available_hubs)[1]
+#        print(expand_hub)
+        max_expand = np.ceil(round((max_hub_capacity[expand_hub] - expand_capacity_list[expand_hub]), 5)/module_capacity)
+        expand_module = min(np.ceil(e/module_capacity), max_expand, rest_add_module)
+#        print(expand_module)
+        expand_capacity = expand_module*module_capacity
+
+        if round(e - expand_capacity, 5) > 0:
+            sorted_exceed_left.append((round(e - expand_capacity, 5),i))
+            full_hubs.append(expand_hub)
+            available_hubs.remove(expand_hub)
+#            print(full_hubs)
+#            print(available_hubs)
+        expand_capacity_list[expand_hub] += expand_capacity
+        rest_add_module -= expand_module
+        sorted_exceed_left.pop(0)
+        sorted_exceed_left = sorted(sorted_exceed_left, reverse = True)
+#        print(sorted_exceed_left)
+
 
     # Reroute after expand
     available_hubs = hubs.copy()
     full_hubs = []
     exceed = np.zeros(node_number)
     for k in hubs:
-        exceed[k] = hub_flow[k] - expand_capacity_list[k]
+        exceed[k] = round((hub_flow[k] - expand_capacity_list[k]), 10)
         if exceed[k] >= 0:
             full_hubs.append(k)
             available_hubs.remove(k)
@@ -304,9 +347,8 @@ def reroute_min_expand(hubs, non_hubs, demand, first_hub, second_hub, capacity_n
                 available_hubs.remove(reroute_cost_hub[1])
 
     exceed_limit = expand_capacity_list + exceed - max_hub_capacity
+    exceed_limit = [e if abs(e) > 1e-5 else 0 for e in exceed_limit]
     return flow, exceed_limit
-
-
 
 def flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients):
     '''
@@ -465,6 +507,7 @@ class chromosome():
         test_data = self.test_data
 
         if self.is_feasible() == False:
+            self.fitness = 0
             return None
 
         distance = test_data['distance']
@@ -503,6 +546,7 @@ class chromosome():
                 hubs = old_hubs + new_hubs
                 # Infeasible
                 if hubs == []:
+                    self.fitness = 0
                     return None
 
                 non_hubs = [i for i in range(self.initial_capacity_matrix.shape[1]) if i not in hubs]
@@ -526,6 +570,7 @@ class chromosome():
                     flow_routing[s].append(flow)
                 # Infeasible
                 except TypeError:
+                    self.fitness = 0
                     return None
                 cost_flow = flow_cost(hubs, non_hubs, flow, hub_node_cost, distance, coefficients)
 

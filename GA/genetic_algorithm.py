@@ -282,11 +282,17 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
                 if rand_num <= mutation_probability:
                     child_chromosome = mutation(child_chromosome)
 
+#                print('calculate_fitness')
                 child_chromosome.calculate_fitness(prefer_expand)
+#                print('calculated')
+                if child_chromosome.fitness == 0:
+                    continue
                 new_generation_list.append(child_chromosome)
                 new_generation_fitness.append(child_chromosome.fitness)
                 new_generation_matrices.append(child_chromosome.initial_capacity_matrix)
                 new_generation_length += 1
+#                print(new_generation_length)
+#                print(child_chromosome.fitness)
 
 
     # Elitism
@@ -299,6 +305,7 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
     if best_matrix_kept == False:
         new_generation_list.append(old_generation[0])
         new_generation_fitness.append(old_generation[0].fitness)
+#        print(old_generation[0].fitness)
         new_generation_matrices.append(best_matrix)
 
     # Sort in decending order
@@ -306,6 +313,7 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
     sorted_pairs = sorted(zipped_lists, reverse = True)
     # Choose a fixed number of best chromosomes
     new_generation = [pair[1] for pair in sorted_pairs[:population_number]]
+#    print(sorted_pairs[0][0])
 
     return new_generation
 
@@ -342,7 +350,7 @@ def GA(initial_population, num_generation, num_unchange, one_pt_col_crossover_pr
     for g in range(num_generation):
         new_generation_list = new_generation(old_generation, one_pt_col_crossover_probability, uniform_col_crossover_probability, one_pt_row_crossover_probability, mutation_probability, prefer_expand)
         best_fitness = new_generation_list[0].fitness
-        if abs(best_fitness - last_best_fitness) < 1e-5:
+        if abs(best_fitness - last_best_fitness) < 1e-8:
             unchange += 1
         else:
             unchange = 0
