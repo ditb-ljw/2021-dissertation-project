@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import bisect
+from operator import itemgetter
 from GA.Chromosomes import chromosome
 
 
@@ -270,11 +271,11 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
         # Check
         for child_chromosome in [child_chromosome_1, child_chromosome_2]:
             repeating_matrix = False
-            # New chromosomes should be different from each other
-            for j in new_generation_matrices:
-                if (child_chromosome.initial_capacity_matrix == j).all():
-                    repeating_matrix = True
-                    break
+#            # New chromosomes should be different from each other
+#            for j in new_generation_matrices:
+#                if (child_chromosome.initial_capacity_matrix == j).all():
+#                    repeating_matrix = True
+#                    break
             # Check feasibility
             if child_chromosome.is_feasible() == True and repeating_matrix == False:
                 # Mutation
@@ -296,21 +297,37 @@ def new_generation(old_generation, one_pt_col_crossover_probability, uniform_col
 
 
     # Elitism
-    best_matrix = old_generation[0].initial_capacity_matrix
-    best_matrix_kept = False
-    for j in new_generation_matrices:
-        if (best_matrix == j).all():
-            best_matrix_kept = True
-            break
-    if best_matrix_kept == False:
-        new_generation_list.append(old_generation[0])
-        new_generation_fitness.append(old_generation[0].fitness)
-#        print(old_generation[0].fitness)
-        new_generation_matrices.append(best_matrix)
+    old_copy = old_generation.copy()
+    appended = 0
+    while appended < int(0.1*population_number):
+        best_matrix = old_copy[0].initial_capacity_matrix
+        best_matrix_kept = False
+#        for j in new_generation_matrices:
+#            if (best_matrix == j).all():
+#                best_matrix_kept = True
+#                break
+        if best_matrix_kept == False:
+            new_generation_list.append(old_copy[0])
+            new_generation_fitness.append(old_copy[0].fitness)
+#            print(old_copy[0].fitness)
+            new_generation_matrices.append(best_matrix)
+            appended += 1
+        old_copy.pop(0)
+
+#    best_matrix = old_generation[0].initial_capacity_matrix
+#    best_matrix_kept = False
+#    for j in new_generation_matrices:
+#        if (best_matrix == j).all():
+#            best_matrix_kept = True
+#            break
+#    if best_matrix_kept == False:
+#        new_generation_list.append(old_generation[0])
+#        new_generation_fitness.append(old_generation[0].fitness)
+#        new_generation_matrices.append(best_matrix)
 
     # Sort in decending order
     zipped_lists = zip(new_generation_fitness, new_generation_list)
-    sorted_pairs = sorted(zipped_lists, reverse = True)
+    sorted_pairs = sorted(zipped_lists, reverse = True, key=itemgetter(0))
     # Choose a fixed number of best chromosomes
     new_generation = [pair[1] for pair in sorted_pairs[:population_number]]
 #    print(sorted_pairs[0][0])
@@ -340,10 +357,10 @@ def GA(initial_population, num_generation, num_unchange, one_pt_col_crossover_pr
     # Sort in decending order
     old_generation_fitness = [c.fitness for c in old_generation_list]
     zipped_lists = zip(old_generation_fitness, old_generation_list)
-    sorted_pairs = sorted(zipped_lists, reverse = True)
+    sorted_pairs = sorted(zipped_lists, reverse = True, key=itemgetter(0))
 
     old_generation = [pair[1] for pair in sorted_pairs]
-    print(old_generation[0].fitness)
+#    print(old_generation[0].fitness)
 
     last_best_fitness = 0
     unchange = 0
